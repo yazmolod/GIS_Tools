@@ -29,6 +29,7 @@ def rosreestr2(kadastr):
             pt = QgsPointXY(center['x'], center['y'])
             return pt 
 
+
 if __name__ == '__main__':
     crs = QgsCoordinateReferenceSystem(3857)
     c = rosreestr2('39:03:080101:100')
