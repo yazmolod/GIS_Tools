@@ -1,9 +1,7 @@
 import geopandas as gpd 
 from shapely.geometry import * 
-from shapely.ops import transform
 import pyproj
 from math import floor
-import matplotlib.pyplot as plt
 
 def convertToLocalCsr(geom):
 	crs = geom.crs

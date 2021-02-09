@@ -1,18 +1,13 @@
 import requests
 from shapely.geometry import *
 from shapely.ops import linemerge, unary_union, polygonize
-import json
 import geopandas as gpd
-from itertools import chain
 from fake_headers import Headers
-import traceback
 import logging
 import ProxyGrabber
 from time import time, sleep
 import re
 
-with open('loggers.config') as fp:
-	logging.config.dictConfig(json.load(fp))
 logger = logging.getLogger(__name__)
 
 overpass_url = "http://overpass-api.de/api/interpreter"

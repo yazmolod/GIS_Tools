@@ -6,17 +6,11 @@ import json
 import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, wait
-import traceback
 from time import time
 import logging
 import logging.config
-from pathlib import Path
 
-folder = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(folder, 'loggers.config')) as fp:
-    logging.config.dictConfig(json.load(fp))
-LOGGER = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)
 
 class ProxyGrabber:
     CACHE_PATH = os.path.dirname(os.path.abspath(__file__)) + r'\proxies.json'
@@ -28,7 +22,7 @@ class ProxyGrabber:
     @staticmethod
     def _download(speed=5000, page_count=100, types = 's45'):
         '''Скачивает прокси с https://hidemy.name/ и записывает их в кэш'''
-        LOGGER.info('Downloading proxies...')
+        logger.info('Downloading proxies...')
         result = []
         params = {'maxtime':speed,   # скорость прокси
                   'type': types,     #h - http, s - https, 4 - socks4, 5 - socks5
@@ -43,7 +37,7 @@ class ProxyGrabber:
             try:
                 response = scraper.get(url, params=params, headers=headers)
             except Exception as e:
-                LOGGER.exception()
+                logger.exception()
             soup = BeautifulSoup(response.text, 'lxml')
             table = soup.find('div', attrs={'class':'table_block'})
             tr = table.find('tr')                   #header
@@ -65,7 +59,7 @@ class ProxyGrabber:
                 result.append(d)
                 tr = tr.find_next('tr')
         proxies = [i['proxy'] for i in result]
-        LOGGER.info('Downloaded: %d' % len(proxies))
+        logger.info('Downloaded: %d' % len(proxies))
         ProxyGrabber._writer_cache(proxies)
         return proxies
 
@@ -77,7 +71,7 @@ class ProxyGrabber:
     @staticmethod
     def _read_cache():
         '''Чтение кэша с последнего парсинга'''
-        LOGGER.info('Reading cache')
+        logger.info('Reading cache')
         if os.path.exists(ProxyGrabber.CACHE_PATH):
             with open(ProxyGrabber.CACHE_PATH, encoding='utf-8') as file:
                 proxies = json.load(file)
@@ -97,7 +91,7 @@ class ProxyGrabber:
     @staticmethod
     def _filter_bad_proxies(proxies, workers=100, test_url='https://www.example.com/', timeout=10):
         '''Многопоточная фильтрация нерабочих прокси'''
-        LOGGER.info('Testing proxies...')
+        logger.info('Testing proxies...')
         good_proxies = []
         if len(proxies) > 0:        
             if isinstance(proxies[0], dict):
@@ -109,7 +103,7 @@ class ProxyGrabber:
                 if future.result():
                     good_proxies.append(futures[future])
         ProxyGrabber._writer_cache(good_proxies)
-        LOGGER.info(f'{len(good_proxies)} is good')
+        logger.info(f'{len(good_proxies)} is good')
         return good_proxies
 
     @staticmethod
@@ -144,12 +138,12 @@ class ProxyGrabber:
             if self.PROXIES_INDEX >= len(ProxyGrabber.PROXIES):
                 self.reset()        
                 ProxyGrabber.PROXIES = ProxyGrabber.get_proxies_list()
-            LOGGER.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(ProxyGrabber.PROXIES)}')
+            logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(ProxyGrabber.PROXIES)}')
         return self.get_proxy()
 
     def reset(self):
         self.PROXIES_INDEX = -1
-        LOGGER.info('Reset proxies list')
+        logger.info('Reset proxies list')
 
 
 if __name__ == '__main__':

@@ -29,10 +29,11 @@ def rosreestr2(kadastr):
             pt = QgsPointXY(center['x'], center['y'])
             return pt 
 
-crs = QgsCoordinateReferenceSystem(3857)
-c = rosreestr2('39:03:080101:100')
-if c:
-    create_temp_layer([c], 'points', crs=crs)
-else:
-    print('Error')
+if __name__ == '__main__':
+    crs = QgsCoordinateReferenceSystem(3857)
+    c = rosreestr2('39:03:080101:100')
+    if c:
+        create_temp_layer([c], 'points', crs=crs)
+    else:
+        print('Error')
 

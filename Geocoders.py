@@ -1,22 +1,12 @@
 import time
 import requests
 from shapely.geometry import MultiPoint, Point
-from shapely.ops import transform
-import pyproj
 import geopandas as gpd
-import pandas as pd
 
 from ProxyGrabber import ProxyGrabber
-import ParserUtils
 
 import re
-import os
-import json
 import logging
-import logging.config
-folder = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(folder, 'loggers.config')) as fp:
-    logging.config.dictConfig(json.load(fp))
 logger = logging.getLogger(__name__)
 
 GRABBER = ProxyGrabber()

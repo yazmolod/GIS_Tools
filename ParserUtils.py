@@ -1,15 +1,11 @@
 import pandas as pd
 import os
-import re
 import time
 from stem.control import Controller
 from stem import Signal
 import json
 import requests
 from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait as conWait
-import pickle
-from pathlib import Path
 import subprocess
 import webbrowser
 
