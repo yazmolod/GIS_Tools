@@ -2,13 +2,14 @@ import time
 import requests
 from shapely.geometry import MultiPoint, Point
 import geopandas as gpd
+from itertools import chain
 
 from ProxyGrabber import ProxyGrabber
 
 import re
 import logging
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 GRABBER = ProxyGrabber()
 HERE_API_KEY = 'uqDak72P-C8FYyYkI4vz8EDxbNFhBJw4jW-fg9P4lb8'
 
@@ -19,9 +20,11 @@ def _rosreestr_request(current_kadastr):
 	try:
 		r = requests.get(formatted_url, proxies = GRABBER.get_proxy(), timeout=3)
 	except:
+		logger.exception(f'(PKK) request exception [{current_kadastr}]')
 		GRABBER.next_proxy()
 		return _rosreestr_request(current_kadastr)
 	if r.status_code == 403:
+		logger.debug(f'(PKK) response 403 [{current_kadastr}]')
 		GRABBER.next_proxy()
 		return _rosreestr_request(current_kadastr)
 	result = r.json()
@@ -30,12 +33,18 @@ def _rosreestr_request(current_kadastr):
 		if center:
 			pt = Point(center['x'], center['y'])
 			pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
+			logger.debug(f'(PKK) Kadastr geocoded [{current_kadastr}]')
 			return pt
+		else:
+			logger.debug(f'(PKK) No center in feature [{current_kadastr}]')
+	else:
+		logger.debug(f'(PKK) No features in response [{current_kadastr}]')
 
 def rosreestr(kadastr, deep_search = False):
 	kad_check = re.findall(r'[\d:]+', kadastr)
 	if len(kad_check) != 1:
-		return
+		raise TypeError(f'"{kadastr}" не является поддерживаемым форматом для геокодирования')
+	kadastr = kad_check[0]
 	if not deep_search:
 		return _rosreestr_request(kadastr)
 	else:
@@ -48,6 +57,18 @@ def rosreestr(kadastr, deep_search = False):
 		
 
 def here(search_string, additional_params = None):
+	# избавляемся от переносов строки, табуляции и прочего
+	search_string = re.sub(r'\s+', ' ', search_string)
+	# убираем повторяющиеся лексемы из запроса
+	args = search_string.split(',')
+	args = [i.strip().split(' ') for i in args]
+	args = chain(*args)
+	unique_args = []
+	for a in args:
+		if a not in unique_args:
+			unique_args.append(a)
+	search_string = ' '.join(unique_args)
+	# генерируем запрос
 	params = {
 	'q': search_string,
 	'apiKey': HERE_API_KEY,
@@ -60,38 +81,32 @@ def here(search_string, additional_params = None):
 		r = requests.get(url)
 		data = r.json()['items']
 	except:
-		logger.exception('Не удалось найти геолокацию')
-		return
-	if len(data) == 0:
-		return Point()
-	if len(data) > 1:
-		item = sorted(data, key = lambda x: x['scoring']['queryScore'], reverse=True)[0]
+		logger.exception('(HERE) Error')
 	else:
-		item = data[0]
-	x = item['position']['lng']
-	y = item['position']['lat']
-	pt = Point(x,y)
-	return pt
+		if len(data) > 0:
+			if len(data) > 1:
+				item = sorted(data, key = lambda x: x['scoring']['queryScore'], reverse=True)[0]
+			else:
+				item = data[0]
+			x = item['position']['lng']
+			y = item['position']['lat']
+			pt = Point(x,y)
+			logger.debug(f'(HERE) Geocoded address [{search_string}]')
+			return pt
+		else:
+			logger.debug(f'(HERE) Geocoder return empty list')
 
 
 def yandex_map(search_string):
 	pass
 
 if __name__ == '__main__':
-	# kn = [
-	# '78:36:0536701:2011',
-	# '78:36:0536701',
-	# '78:36',
-	# '78',
-	# ]
-	# gdf = gpd.GeoDataFrame()
-	# for k in kn:
-	# 	pt = rosreestr(k)
-	# 	print(type(pt))
-	# 	gdf = gdf.append(gpd.GeoDataFrame([k], columns=['kn'], geometry=gpd.GeoSeries([pt])))
-	# gdf.to_file('test210.geojson', driver='GeoJSON')
-	# p = here('Башкортостан Респ., Стерлитамак г., Гоголя ул., 122, 453130')
-	# df = pd.DataFrame(['Самара алексея толстого 26', 'Самара Никитинская 77', 'Самара Мориса Тореза 6'], columns=['Адрес'])
+	# current_kadastr = '65:22:0000003:1119'
+	# current_kadastr = '65:22:0000003'
+	# current_kadastr = '14:36:000000:19144; 14:36:107007:43; 14:36:107007:375'
+	# current_kadastr = '  14:36:000000 '
+	# kad_check = re.findall(r'[\d:]+', kn1)
+	# r = rosreestr(current_kadastr)
 
-	add = 'Смоленская обл, Рославльский р-н юго-западная часть КК 67:15:0020401, юго-восточнее д. Липовка'
-	data = here(add)
+	address = 'Новосибирская обл, Чулымский р-н, Чулым г, Энгельса ул Новосибирская обл, Чулымский р-н, Чулым г, Энгельса ул, дом 7'
+	r = here(address)

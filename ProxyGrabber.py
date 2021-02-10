@@ -37,7 +37,7 @@ class ProxyGrabber:
             try:
                 response = scraper.get(url, params=params, headers=headers)
             except Exception as e:
-                logger.exception()
+                logger.exception('Failed on download proxies')
             soup = BeautifulSoup(response.text, 'lxml')
             table = soup.find('div', attrs={'class':'table_block'})
             tr = table.find('tr')                   #header
