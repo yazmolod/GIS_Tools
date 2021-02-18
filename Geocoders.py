@@ -20,7 +20,7 @@ def _rosreestr_request(current_kadastr):
 	try:
 		r = requests.get(formatted_url, proxies = GRABBER.get_proxy(), timeout=3)
 	except:
-		logger.exception(f'(PKK) request exception [{current_kadastr}]')
+		logger.debug(f'(PKK) request exception [{current_kadastr}]')
 		GRABBER.next_proxy()
 		return _rosreestr_request(current_kadastr)
 	if r.status_code == 403:
