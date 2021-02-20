@@ -2,6 +2,9 @@ import pickle
 import time
 import os
 from selenium import webdriver
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from seleniumwire import webdriver as xhr_webdriver
@@ -51,6 +54,31 @@ def start_xhr_selenium(options = None, use_tor_proxy = False):
     driver = xhr_webdriver.Firefox(seleniumwire_options = options)
     driver.maximize_window()
     return driver
+
+def selenium_wait_element(driver, xpath, timeout=30, ec_type='element_to_be_clickable'):
+    ec_types = [
+    'title_is'
+    'title_contains'
+    'presence_of_element_located'
+    'visibility_of_element_located'
+    'visibility_of'
+    'presence_of_all_elements_located'
+    'text_to_be_present_in_element'
+    'text_to_be_present_in_element_value'
+    'frame_to_be_available_and_switch_to_it'
+    'invisibility_of_element_located'
+    'element_to_be_clickable'
+    'staleness_of'
+    'element_to_be_selected'
+    'element_located_to_be_selected'
+    'element_selection_state_to_be'
+    'element_located_selection_state_to_be'
+    'alert_is_present'
+    ]
+    wait_func = getattr(EC, ec_type)
+    wait = WebDriverWait(driver, timeout) 
+    element = wait.until(wait_func((By.XPATH, xpath)))
+    return element
 
 def start_session():
     ses = Session()

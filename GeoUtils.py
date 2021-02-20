@@ -21,7 +21,7 @@ def filterByIntersectProcent(main_polygon : gpd.GeoSeries, tiles : gpd.GeoSeries
 		if int_geom.area / v.area >= 0.5:
 			intersections = intersections.append(v, sort=False)
 
-def tilesOverShape(gdf, x_count, y_count, fill_area_filter_factor = 0.1):
+def tilesOverShape(gdf, delta_x=None, delta_y=None, x_count=None, y_count=None, fill_area_filter_factor = 0.1):
 	geoseries = gdf.geometry
 	min_bounds = geoseries.bounds.min()
 	max_bounds = geoseries.bounds.max()
@@ -29,8 +29,14 @@ def tilesOverShape(gdf, x_count, y_count, fill_area_filter_factor = 0.1):
 	y1 = min_bounds['miny']
 	x2 = max_bounds['maxx']
 	y2 = max_bounds['maxy']
-	dy = (y2-y1)/y_count
-	dx = (x2-x1)/x_count
+	if delta_x and delta_y:
+		dx = delta_x
+		dy = delta_y
+		x_count = int((x2-x1)/delta_x)
+		y_count = int((y2-y1)/delta_y)
+	elif x_count and y_count:
+		dy = (y2-y1)/y_count
+		dx = (x2-x1)/x_count
 	old_y = y1
 	regions = gpd.GeoSeries(crs = gdf.crs)
 	for ix in range(x_count):
