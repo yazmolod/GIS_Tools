@@ -16,46 +16,24 @@ from fake_headers import Headers
 # path = GeckoDriverManager(path='C:/geckodriver').install()
 # os.replace(path, 'C:/geckodriver/geckodriver.exe')
 
-def _get_tor_firefox_profile():
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference("network.proxy.type", 1)
-    profile.set_preference("network.proxy.socks", '127.0.0.1')
-    profile.set_preference("network.proxy.socks_port", 9050)
-    profile.set_preference("network.proxy.socks_remote_dns", True)
-    profile.set_preference("security.ssl.enable_ocsp_stapling", False)
-    profile.accept_untrusted_certs = True
-    return profile
-
-def _get_proxy_firefox_profile(proxy):
-    ip, port = proxy.split(':')
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference("network.proxy.type", 1)
-    profile.set_preference("network.proxy.http", ip)
-    profile.set_preference("network.proxy.http_port", int(port))
-    profile.set_preference("network.proxy.share_proxy_settings", True)
-    profile.set_preference("security.ssl.enable_ocsp_stapling", False)
-    return profile
-
-def start_selenium(timeout = 300, proxy=None, use_tor_proxy = False):
-    if use_tor_proxy:
-        firefox_profile = _get_tor_firefox_profile()
-
-        driver = webdriver.Firefox(firefox_profile = firefox_profile)
-    elif proxy:
-        firefox_profile = _get_proxy_firefox_profile(proxy)
-        driver = webdriver.Firefox(firefox_profile = firefox_profile)
+def start_selenium(driver_type='firefox', seleniumwire_driver=False, timeout = 300, **kwargs):
+    if seleniumwire_driver:
+        driver_class = xhr_webdriver
     else:
-        driver = webdriver.Firefox()
+        driver_class = webdriver
+
+    if driver_type=='firefox':
+        driver = driver_class.Firefox(executable_path=GeckoDriverManager().install())
+    elif driver_type=='chrome':
+        driver = webdriver.Chrome(ChromeDriverManager().install())
+    else:
+        raise NotImplementedError(f"Запуск драйвера {driver_type} не реализован")
+
     driver.maximize_window()
     driver.set_page_load_timeout(timeout)
     return driver
 
-def start_xhr_selenium(options = None, use_tor_proxy = False):
-    driver = xhr_webdriver.Firefox(seleniumwire_options = options)
-    driver.maximize_window()
-    return driver
-
-def selenium_wait_element(driver, xpath, timeout=30, ec_type='element_to_be_clickable'):
+def selenium_wait_element(driver, xpath, timeout=60, ec_type='element_to_be_clickable'):
     ec_types = [
     'title_is'
     'title_contains'

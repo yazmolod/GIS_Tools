@@ -170,27 +170,27 @@ def clean_gdf(gdf):
 			gdf.drop(c, axis=1, inplace=True)
 
 
-
-admin_levels = [7]
-for admin_level in admin_levels:
-	while True:
-		available, timings = overpass_status()
-		if True:
-		# if available:
-			area_prop = {
-				"ISO3166-1":"RU",
-			}
-			rel_prop = {
-			"admin_level": admin_level,
-			"boundary": "administrative",
-			}
-			data = make_searh(rel_prop=rel_prop, area_prop=area_prop)
-			g = response_handler(data)
-			gdf = gpd.GeoDataFrame(list(g))
-			clean_gdf(gdf)
-			gdf.to_file('OverpassTest.gpkg', layer=f'admin_level_{admin_level}', driver='GPKG')
-			break
-		else:
-			t = min(timings)
-			logger.info(f'Sleep for {t} seconds')
-			sleep(t)
+if __name__ == '__main__':
+	admin_levels = [7]
+	for admin_level in admin_levels:
+		while True:
+			available, timings = overpass_status()
+			if True:
+			# if available:
+				area_prop = {
+					"ISO3166-1":"RU",
+				}
+				rel_prop = {
+				"admin_level": admin_level,
+				"boundary": "administrative",
+				}
+				data = make_searh(rel_prop=rel_prop, area_prop=area_prop)
+				g = response_handler(data)
+				gdf = gpd.GeoDataFrame(list(g))
+				clean_gdf(gdf)
+				gdf.to_file('OverpassTest.gpkg', layer=f'admin_level_{admin_level}', driver='GPKG')
+				break
+			else:
+				t = min(timings)
+				logger.info(f'Sleep for {t} seconds')
+				sleep(t)
