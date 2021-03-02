@@ -7,29 +7,51 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.common.proxy import Proxy, ProxyType
+from selenium.webdriver.chrome.options import Options as chrome_options
+from selenium.webdriver.firefox.options import Options as firefox_options
 from seleniumwire import webdriver as xhr_webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 from requests import Session
 from fake_headers import Headers
+from pathlib import Path
+import shutil
 
-# path = GeckoDriverManager(path='C:/geckodriver').install()
-# os.replace(path, 'C:/geckodriver/geckodriver.exe')
 
-def start_selenium(driver_type='firefox', seleniumwire_driver=False, timeout = 300, **kwargs):
+def start_selenium(
+    driver_type='firefox', 
+    seleniumwire_driver=False, 
+    timeout = 60, 
+    is_headless = False,
+    **kwargs):
     if seleniumwire_driver:
-        driver_class = xhr_webdriver
+        driver_module = xhr_webdriver
     else:
-        driver_class = webdriver
+        driver_module = webdriver
 
     if driver_type=='firefox':
-        driver = driver_class.Firefox(executable_path=GeckoDriverManager().install())
+        driver_class = driver_module.Firefox
+        driver_path = Path(__file__).parent / '_webdrivers' / 'gecko.exe'
+        webdriver_manager = GeckoDriverManager()
+        options = firefox_options()
     elif driver_type=='chrome':
-        driver = webdriver.Chrome(ChromeDriverManager().install())
+        driver_class = driver_module.Chrome
+        driver_path = Path(__file__).parent / '_webdrivers' / 'chrome.exe'
+        webdriver_manager = ChromeDriverManager()
+        options = chrome_options()
     else:
         raise NotImplementedError(f"Запуск драйвера {driver_type} не реализован")
 
-    driver.maximize_window()
+    driver_path = driver_path.resolve()
+    if not driver_path.exists():
+        driver_path.parent.mkdir(exist_ok=True)
+        cache_path = webdriver_manager.install()
+        shutil.copy(cache_path, str(driver_path))
+
+    options.headless = is_headless
+    driver = driver_class(options=options, executable_path=str(driver_path))
+    if not is_headless:
+        driver.maximize_window()
     driver.set_page_load_timeout(timeout)
     return driver
 
@@ -118,6 +140,4 @@ def save_html(response, path):
         file.write(response.content)
 
 if __name__ == '__main__':
-    # from ParserUtils import change_tor_ip
-    driver = start_selenium()
-    # driver.get('https://whatismyipaddress.com/')
+    pass
