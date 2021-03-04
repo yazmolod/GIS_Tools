@@ -16,6 +16,8 @@ from requests import Session
 from fake_headers import Headers
 from pathlib import Path
 import shutil
+import platform
+from pyvirtualdisplay import Display
 
 
 def start_selenium(
@@ -49,6 +51,12 @@ def start_selenium(
         shutil.copy(cache_path, str(driver_path))
 
     options.headless = is_headless
+
+    # если нам не доступна графическая среда (Linux), то эмулируем экран, иначе будет ошибка
+    if platform.system() == 'Linux':
+        display = Display(visible=0, size=(800, 600))
+        display.start()
+
     driver = driver_class(options=options, executable_path=str(driver_path))
     if not is_headless:
         driver.maximize_window()
