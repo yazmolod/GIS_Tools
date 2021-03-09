@@ -3,17 +3,16 @@ import cloudscraper
 from bs4 import BeautifulSoup
 import re
 import json
-import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, wait
 from time import time
 import logging
 import logging.config
-
 logger = logging.getLogger(__name__)
+from pathlib import Path
 
 class ProxyGrabber:
-    CACHE_PATH = os.path.dirname(os.path.abspath(__file__)) + r'\proxies.json'
+    CACHE_PATH = Path(__file__).parent / 'proxies.json'
     PROXIES = None
 
     def __init__(self):
@@ -72,7 +71,7 @@ class ProxyGrabber:
     def _read_cache():
         '''Чтение кэша с последнего парсинга'''
         logger.info('Reading cache')
-        if os.path.exists(ProxyGrabber.CACHE_PATH):
+        if ProxyGrabber.CACHE_PATH.exists():
             with open(ProxyGrabber.CACHE_PATH, encoding='utf-8') as file:
                 proxies = json.load(file)
             return proxies
@@ -108,8 +107,8 @@ class ProxyGrabber:
 
     @staticmethod
     def get_proxies_list(minutes_from_last_update=300):
-    	if os.path.exists(ProxyGrabber.CACHE_PATH):
-    		file_timestamp = os.path.getmtime(ProxyGrabber.CACHE_PATH)
+    	if ProxyGrabber.CACHE_PATH.exists():
+    		file_timestamp = ProxyGrabber.CACHE_PATH.stat().st_mtime
     		now_timestamp = time()
     		delta = now_timestamp-file_timestamp
     		if delta/60 <= minutes_from_last_update:
