@@ -1,12 +1,9 @@
 import pickle
 import time
-import os
 from selenium import webdriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.chrome.options import Options as chrome_options
 from selenium.webdriver.firefox.options import Options as firefox_options
 from seleniumwire import webdriver as xhr_webdriver
@@ -16,8 +13,6 @@ from requests import Session
 from fake_headers import Headers
 from pathlib import Path
 import shutil
-import platform
-from pyvirtualdisplay import Display
 
 
 def start_selenium(
@@ -51,12 +46,6 @@ def start_selenium(
         shutil.copy(cache_path, str(driver_path))
 
     options.headless = is_headless
-
-    # если нам не доступна графическая среда (Linux), то эмулируем экран, иначе будет ошибка
-    if platform.system() == 'Linux':
-        display = Display(visible=0, size=(800, 600))
-        display.start()
-
     driver = driver_class(options=options, executable_path=str(driver_path))
     if not is_headless:
         driver.maximize_window()
