@@ -19,7 +19,7 @@ class ProxyGrabber:
         self.PROXIES_INDEX = -1
 
     @staticmethod
-    def _download(speed=5000, page_count=100, types = 's45'):
+    def _download(speed=5000, page_count=100, types='s45', countries=['RU', 'BY', 'UA']):
         '''Скачивает прокси с https://hidemy.name/ и записывает их в кэш'''
         logger.info('Downloading proxies...')
         result = []
@@ -29,6 +29,10 @@ class ProxyGrabber:
                   'start': 0,        # смещение запросов
                  }
         url = 'https://hidemy.name/ru/proxy-list/?'
+        if countries:
+            # делаю так, а не через параметры, потому что в противном случае этот аргумент попадает в конец, а сайт из за этого ставит блок
+            url += f"country={''.join(countries)}&"
+
         headers = Headers().generate()   
         scraper = cloudscraper.create_scraper()     # для прохождения защиты от cloudflare
         for i in range(page_count):
@@ -148,6 +152,7 @@ class ProxyGrabber:
 if __name__ == '__main__':
     gr = ProxyGrabber()
     gr.next_proxy()
+    
     
 
     
