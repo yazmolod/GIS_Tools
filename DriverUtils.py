@@ -132,7 +132,7 @@ def scroll_page(driver, infinite_scroll=True, xpaths=[], sleep_time=1):
 	    else:
 		    return scroll_page(driver, infinite_scroll, xpaths, sleep_time)
 
-def save_html(response, path):
+def save_html(response, path='./debug.html'):
     with open(path, 'wb') as file:
         file.write(response.content)
 

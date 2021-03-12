@@ -10,6 +10,10 @@ import logging
 import logging.config
 logger = logging.getLogger(__name__)
 from pathlib import Path
+from threading import get_ident
+from threading import Lock
+from collections import defaultdict
+
 
 class ProxyGrabber:
     CACHE_PATH = Path(__file__).parent / 'proxies.json'
@@ -39,7 +43,7 @@ class ProxyGrabber:
             params['start'] = i*64
             try:
                 response = scraper.get(url, params=params, headers=headers)
-            except Exception as e:
+            except Exception:
                 logger.exception('Failed on download proxies')
             soup = BeautifulSoup(response.text, 'lxml')
             table = soup.find('div', attrs={'class':'table_block'})
@@ -68,8 +72,13 @@ class ProxyGrabber:
 
     @staticmethod
     def _writer_cache(cache):
-        with open(ProxyGrabber.CACHE_PATH, 'w', encoding='utf-8') as file:
-            json.dump(cache, file, ensure_ascii=False, indent=2)
+        if GLOBAL_LOCK.locked():
+            return
+        else:
+            GLOBAL_LOCK.acquire()
+            with open(ProxyGrabber.CACHE_PATH, 'w', encoding='utf-8') as file:
+                json.dump(cache, file, ensure_ascii=False, indent=2)
+            GLOBAL_LOCK.release()
 
     @staticmethod
     def _read_cache():
@@ -141,7 +150,7 @@ class ProxyGrabber:
             if self.PROXIES_INDEX >= len(ProxyGrabber.PROXIES):
                 self.reset()        
                 ProxyGrabber.PROXIES = ProxyGrabber.get_proxies_list()
-            logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(ProxyGrabber.PROXIES)}')
+            logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(ProxyGrabber.PROXIES)} [thread{get_ident()}]')
         return self.get_proxy()
 
     def reset(self):
@@ -149,9 +158,27 @@ class ProxyGrabber:
         logger.info('Reset proxies list')
 
 
+class ProxyGrabberThreadingFactory:
+    def __init__(self):
+        ProxyGrabber.get_proxies_list()
+        self.threads_grabbers = defaultdict(ProxyGrabber)
+
+    def get_grabber(self):
+        thread_id = get_ident()
+        return self.threads_grabbers[thread_id]
+
+    def get_proxy(self):
+        return self.get_grabber().get_proxy()
+
+    def next_proxy(self):
+        return self.get_grabber().next_proxy()
+
+
+GLOBAL_LOCK = Lock()
+
+
 if __name__ == '__main__':
-    gr = ProxyGrabber()
-    gr.next_proxy()
+    g = get_threading_grabber()
     
     
 
