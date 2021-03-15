@@ -119,7 +119,7 @@ class ProxyGrabber:
         return good_proxies
 
     @staticmethod
-    def get_proxies_list(minutes_from_last_update=300):
+    def get_proxies_list(minutes_from_last_update=300, download_config={}):
     	if ProxyGrabber.CACHE_PATH.exists():
     		file_timestamp = ProxyGrabber.CACHE_PATH.stat().st_mtime
     		now_timestamp = time()
@@ -131,7 +131,7 @@ class ProxyGrabber:
     			proxies = ProxyGrabber._filter_bad_proxies(proxies)
     			return proxies
     	else:
-    		proxies = ProxyGrabber._download()
+    		proxies = ProxyGrabber._download(**download_config)
     		proxies = ProxyGrabber._filter_bad_proxies(proxies)
     		return proxies
 
@@ -159,8 +159,8 @@ class ProxyGrabber:
 
 
 class ProxyGrabberThreadingFactory:
-    def __init__(self):
-        ProxyGrabber.get_proxies_list()
+    def __init__(self, **kwargs):
+        ProxyGrabber.get_proxies_list(download_config=kwargs)
         self.threads_grabbers = defaultdict(ProxyGrabber)
 
     def get_grabber(self):
@@ -178,7 +178,7 @@ GLOBAL_LOCK = Lock()
 
 
 if __name__ == '__main__':
-    g = get_threading_grabber()
+    g = ProxyGrabberThreadingFactory(countries=None)
     
     
 
