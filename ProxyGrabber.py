@@ -34,6 +34,8 @@ class ProxyGrabber:
             self.download = self._download
         else:
             raise KeyError(f'Неправильный аргумент {download_method}') 
+        # качаем сразу
+        self.get_proxies_list()
 
     @property
     def PROXIES_INDEX(self):
