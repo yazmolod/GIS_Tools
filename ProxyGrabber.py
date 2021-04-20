@@ -12,43 +12,109 @@ logger = logging.getLogger(__name__)
 from pathlib import Path
 from threading import get_ident
 from threading import Lock
-
+from urllib.parse import urlencode
 
 class ProxyGrabber:
     CACHE_PATH = Path(__file__).parent / 'proxies.json'
-    PROXIES = None
+    HIDEMY_NAME_API_CODE = '273647900996729'
 
-    def __init__(self, **kwargs):
-        self.PROXIES_INDEX = -1
-        self.proxy_attrs = kwargs
+    def __init__(self, allowed_countries=[], download_method='api'):
+        '''
+        allowed_countries - параметр, по которому фильтруются скаченные/кэшированные прокси по странам, ['RU', 'BY']
+        '''
+        self.allowed_countries = allowed_countries
+        self.__threads_indexes = {}
+        self.__threads_proxies = {}
+        self.default_speed = 5000
+        self.default_types = 's45'
+        self.default_minutes_from_last_update = 300
+        if download_method == 'api':
+            self.download = self._api_download
+        elif download_method == 'parse':
+            self.download = self._download
+        else:
+            raise KeyError(f'Неправильный аргумент {download_method}') 
+
+    @property
+    def PROXIES_INDEX(self):
+        thread_id = get_ident()
+        if thread_id not in self.__threads_indexes:
+            self.__threads_indexes[thread_id] = -1
+        return self.__threads_indexes[thread_id]
+
+    @property
+    def PROXIES(self):
+        thread_id = get_ident()
+        return self.__threads_proxies.get(thread_id, None)
+
+    def _set_proxies(self, proxies):
+        thread_id = get_ident()
+        self.__threads_proxies[thread_id] = proxies
+
+    def _increase_index(self):
+        thread_id = get_ident()
+        self.__threads_indexes[thread_id] = self.PROXIES_INDEX + 1
+
+    def _decrease_index(self):
+        thread_id = get_ident()
+        self.__threads_indexes[thread_id] = self.PROXIES_INDEX - 1
+
+    def _reset_index(self):
+        thread_id = get_ident()
+        self.__threads_indexes[thread_id] = -1
+
+    def _api_download(self):
+        url = 'http://hidemy.name/ru/api/proxylist.php'
+        params = {
+        'out': 'js',
+        'maxtime': self.default_speed,
+        'type': self.default_types,
+        'code': ProxyGrabber.HIDEMY_NAME_API_CODE
+        }
+        r = requests.get(url, params=params)
+        data = r.json()
+        updated_data = []
+        for d in data:
+            proxy = ProxyGrabber.proxy_from_dict(d)
+            updated_data.append({'proxy': proxy, **d})
+        logger.info('Downloaded: %d' % len(updated_data))
+        ProxyGrabber._writer_cache(updated_data)
+
 
     @staticmethod
-    def _download(speed=5000, types='s45', countries=None):
-        '''Скачивает прокси с https://hidemy.name/ и записывает их в кэш'''
+    def proxy_from_dict(d):
+        ip = d['ip']
+        port = d['port']
+        if d['ssl'] == '1':
+            return f'https://{ip}:{port}'
+        elif d['socks4'] == '1':
+            return f'socks4://{ip}:{port}'
+        elif d['socks5'] == '1':
+            return f'socks5://{ip}:{port}'
+        elif d['http'] == '1':
+            return f'http://{ip}:{port}'
+
+
+    def _download(self):
+        '''Скачивает прокси с https://hidemy.name/ и записывает их в кэш. Работает на cloudflare поэтому временами ломается (возможно навечно)'''
         logger.info('Downloading proxies...')
         result = []
-        params = {'maxtime':speed,   # скорость прокси
-                  'type': types,     #h - http, s - https, 4 - socks4, 5 - socks5
+        params = {'maxtime':self.default_speed,   # скорость прокси
+                  'type': self.default_types,     #h - http, s - https, 4 - socks4, 5 - socks5
                   'anon': '1234',     #низкая, средняя и высокая
                   'start': 0,        # смещение запросов
-                 }
-        url = 'https://hidemy.name/ru/proxy-list/?'
-        if countries:
-            # делаю так, а не через параметры, потому что в противном случае этот аргумент попадает в конец, а сайт из за этого ставит блок
-            url += f"country={''.join(countries)}&"
+                 }        
 
         headers = Headers().generate()   
         scraper = cloudscraper.create_scraper()     # для прохождения защиты от cloudflare
         from_page = 1
         last_page = -1
+
         while True:
             params['start'] = (from_page - 1)*64
-            try:
-                response = scraper.get(url, params=params, headers=headers)
-            except Exception:
-                logger.exception('Failed on download proxies')
+            url = 'https://hidemy.name/ru/proxy-list/?' + urlencode(params)
+            response = scraper.get(url, headers=headers)
             doc = html.fromstring(response.content)
-
             pagination = doc.xpath('//div[@class = "pagination"]//a')
             if not pagination:
                 break
@@ -76,6 +142,7 @@ class ProxyGrabber:
                 break
         logger.info('Downloaded: %d' % len(result))
         ProxyGrabber._writer_cache(result)
+
 
     @staticmethod
     def _writer_cache(cache):
@@ -125,14 +192,12 @@ class ProxyGrabber:
         logger.info(f'{len(good_proxies)} is good')
         return good_proxies
 
-    @staticmethod
-    def _filter_meta_proxy(proxy, attrs):
+
+    def _filter_meta_proxy(self, proxy, **filter_attrs):
         flags = []
-        if not attrs:
-            return True
-        for k,v in attrs.items():
+        for k,v in filter_attrs.items():
             if k in proxy:
-                proxy_value = proxy.get(k, None)
+                proxy_value = proxy[k]
                 if proxy_value:
                     any_match = re.findall('|'.join(v), proxy_value)
                     if any_match:
@@ -141,75 +206,48 @@ class ProxyGrabber:
                         logger.debug(f'No match on filter {k}')
                         flags.append(False)
                 else:
-                    logger.debug(f'Key {k} havent value')
+                    logger.debug(f'None value for {k} for {proxy}')
                     flags.append(False)
             else:
-                logger.debug(f'Key {k} doesnt exists')
-                flags.append(False)
+                raise KeyError(f'Неправильный ключ для фильтрации прокси - {k}. Доступные ключи - {proxy.keys()}')
         return all(flags)
 
 
-    @staticmethod
-    def get_proxies_list(minutes_from_last_update=300, proxy_attrs={}):
-        '''
-        proxy_attrs - параметр, по которому фильтруются скаченные/кэшированные прокси
-        Например при proxt_attrs={countries:['Russian Federation', 'Belarus']} будут выданы
-        прокси только из России и Беларуси 
-        '''
+    def get_proxies_list(self):        
         if ProxyGrabber.CACHE_PATH.exists():
             file_timestamp = ProxyGrabber.CACHE_PATH.stat().st_mtime
             now_timestamp = time()
             delta = now_timestamp-file_timestamp
-            if delta/60 > minutes_from_last_update:
-                ProxyGrabber._download()
+            if delta/60 > self.default_minutes_from_last_update:
+                self.download()
         else:
-            ProxyGrabber._download()
+            self.download()
 
         meta_proxies = ProxyGrabber._read_cache()
-        meta_proxies = list(filter(lambda x: ProxyGrabber._filter_meta_proxy(x, proxy_attrs), meta_proxies))
+        if self.allowed_countries:
+            meta_proxies = list(filter(lambda x: self._filter_meta_proxy(x, country_code=self.allowed_countries), meta_proxies))
         proxies = [i['proxy'] for i in meta_proxies]
         return proxies
+
 
     def get_proxy(self):
         if self.PROXIES_INDEX == -1:
             return {'http': None, 'https': None}
         else:
-            if not ProxyGrabber.PROXIES:
-                ProxyGrabber.PROXIES = ProxyGrabber.get_proxies_list(proxy_attrs=self.proxy_attrs)
-            proxy = ProxyGrabber.PROXIES[self.PROXIES_INDEX]
+            if not self.PROXIES:
+                self._set_proxies(self.get_proxies_list())
+            proxy = self.PROXIES[self.PROXIES_INDEX]
             return {'http': proxy, 'https': proxy}
 
+
     def next_proxy(self):
-        self.PROXIES_INDEX += 1  
-        if ProxyGrabber.PROXIES: 
-            if self.PROXIES_INDEX >= len(ProxyGrabber.PROXIES):
-                self.reset()        
-                ProxyGrabber.PROXIES = ProxyGrabber.get_proxies_list(proxy_attrs=self.proxy_attrs)
-            logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(ProxyGrabber.PROXIES)} [thread{get_ident()}]')
+        self._increase_index()
+        if self.PROXIES: 
+            if self.PROXIES_INDEX >= len(self.PROXIES):
+                self._reset_index()        
+                self.PROXIES = self.get_proxies_list()
+            logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(self.PROXIES)} [thread{get_ident()}]')
         return self.get_proxy()
-
-    def reset(self):
-        self.PROXIES_INDEX = -1
-        logger.info('Reset proxies list')
-
-
-class ProxyGrabberThreadingFactory:
-    def __init__(self, **kwargs):
-        self.default_proxy_filters = kwargs
-        ProxyGrabber.get_proxies_list()
-        self.threads_grabbers = {}
-
-    def get_grabber(self):
-        thread_id = get_ident()
-        if thread_id not in self.threads_grabbers:
-            self.threads_grabbers[thread_id] = ProxyGrabber(**self.default_proxy_filters)
-        return self.threads_grabbers[thread_id]
-
-    def get_proxy(self):
-        return self.get_grabber().get_proxy()
-
-    def next_proxy(self):
-        return self.get_grabber().next_proxy()
 
 
 GLOBAL_LOCK = Lock()
@@ -217,7 +255,17 @@ GLOBAL_LOCK = Lock()
 
 if __name__ == '__main__':
     # logger.debug('test')
-    p3 = ProxyGrabberThreadingFactory(country=['Ukraine', 'Belarus', 'Russian Federation'], type=['HTTPS'])
+    pg = ProxyGrabber(allowed_countries=['RU', 'US'])
+    p = pg.next_proxy()
+    print(p, len(pg.PROXIES))
+
+    pg = ProxyGrabber(allowed_countries=['RU'])
+    p = pg.next_proxy()
+    print(p, len(pg.PROXIES))
+
+    pg = ProxyGrabber()
+    p = pg.next_proxy()
+    print(p, len(pg.PROXIES))
     
 
     
