@@ -33,12 +33,12 @@ def _rosreestr_request(current_kadastr):
         if center:
             pt = Point(center['x'], center['y'])
             pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
-            logger.debug(f'(PKK) Kadastr geocoded [{current_kadastr}]')
+            logger.info(f'(PKK) Kadastr geocoded [{current_kadastr}]')
             return pt
         else:
-            logger.debug(f'(PKK) No center in feature [{current_kadastr}]')
+            logger.warning(f'(PKK) No center in feature [{current_kadastr}]')
     else:
-        logger.debug(f'(PKK) No features in response [{current_kadastr}]')
+        logger.warning(f'(PKK) No features in response [{current_kadastr}]')
 
 def rosreestr(kadastr, deep_search = False):
     kad_check = re.findall(r'[\d:]+', kadastr)
@@ -79,9 +79,12 @@ def here(search_string, additional_params = None):
         params = {**params, **additional_params}
     try:
         r = requests.get(url)
+        if r.status_code == 429:
+            time.sleep(1)
+            return here(search_string, additional_params = None)
         data = r.json()['items']
     except:
-        logger.exception('(HERE) Error')
+        logger.exception(f'(HERE) Error, status_code {r.status_code}')
     else:
         if len(data) > 0:
             if len(data) > 1:
@@ -91,10 +94,10 @@ def here(search_string, additional_params = None):
             x = item['position']['lng']
             y = item['position']['lat']
             pt = Point(x,y)
-            logger.debug(f'(HERE) Geocoded address [{search_string}]')
+            logger.info(f'(HERE) Geocoded address [{search_string}]')
             return pt
         else:
-            logger.debug(f'(HERE) Geocoder return empty list')
+            logger.warning(f'(HERE) Geocoder return empty list')
 
 
 def yandex_map(search_string):
