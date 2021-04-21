@@ -73,7 +73,18 @@ class ProxyGrabber:
         'type': self.default_types,
         'code': ProxyGrabber.HIDEMY_NAME_API_CODE
         }
+
         r = requests.get(url, params=params)
+        if r.status_code != 200:
+            cache_proxy = self.get_cache_list()
+            iproxy = 0
+            while True:
+                r = requests.get(url, params=params, proxies=cache_proxy[iproxy])
+                if r.status_code == 200:
+                    break
+                else:
+                    iproxy += 1
+
         data = r.json()
         updated_data = []
         for d in data:
@@ -214,6 +225,12 @@ class ProxyGrabber:
                 raise KeyError(f'Неправильный ключ для фильтрации прокси - {k}. Доступные ключи - {proxy.keys()}')
         return all(flags)
 
+    def get_cache_list(self):
+        meta_proxies = ProxyGrabber._read_cache()
+        if self.allowed_countries:
+            meta_proxies = list(filter(lambda x: self._filter_meta_proxy(x, country_code=self.allowed_countries), meta_proxies))
+        proxies = [i['proxy'] for i in meta_proxies]
+        return proxies
 
     def get_proxies_list(self):        
         if ProxyGrabber.CACHE_PATH.exists():
@@ -224,11 +241,7 @@ class ProxyGrabber:
                 self.download()
         else:
             self.download()
-
-        meta_proxies = ProxyGrabber._read_cache()
-        if self.allowed_countries:
-            meta_proxies = list(filter(lambda x: self._filter_meta_proxy(x, country_code=self.allowed_countries), meta_proxies))
-        proxies = [i['proxy'] for i in meta_proxies]
+        proxies = self.get_cache_list()
         return proxies
 
 
@@ -251,28 +264,8 @@ class ProxyGrabber:
             logger.info(f'Changed proxy, {self.PROXIES_INDEX + 1} out {len(self.PROXIES)} [thread{get_ident()}]')
         return self.get_proxy()
 
-
 GLOBAL_LOCK = Lock()
 
 
 if __name__ == '__main__':
-    # logger.debug('test')
-    pg = ProxyGrabber(allowed_countries=['RU', 'US'])
-    p = pg.next_proxy()
-    print(p, len(pg.PROXIES))
-
-    pg = ProxyGrabber(allowed_countries=['RU'])
-    p = pg.next_proxy()
-    print(p, len(pg.PROXIES))
-
     pg = ProxyGrabber()
-    p = pg.next_proxy()
-    print(p, len(pg.PROXIES))
-    
-
-    
-    
-    
-
-    
-    
