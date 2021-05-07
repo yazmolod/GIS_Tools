@@ -26,7 +26,27 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread'):
                 result.append(f.result())
             except:
                 logger.exception(f'FATAL ERROR on args {futures[f]}')
-                break
+                return result
             else:
                 logger.info(f'Done {len(result)} out {len(futures)}')
     return result
+
+
+def loop_execute(func, inputs=None):
+    if not inputs:
+        return []
+    results = []
+    for i, item in enumerate(inputs):
+        try:
+            if isinstance(item, list) or isinstance(item, tuple):
+                result = func(*item)
+            elif isinstance(item, dict):
+                result = func(**item)
+            else:
+                result = func(item)
+            results.append(result)
+            logger.info(f'Done {i+1} out {len(inputs)}')
+        except:
+            logger.exception(f'FATAL ERROR on args {item}')
+            return results
+    return results
