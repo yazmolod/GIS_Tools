@@ -11,6 +11,7 @@ import gdal
 from pathlib import Path
 import shutil
 import logging 
+import mercantile
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ class TilerCreator:
 		extent_gdf = extent_gdf.to_crs(self.crs_code)
 		if len(extent_gdf) > 1:
 			logger.warning('Файл экстента содержит больше одного элемента геометрии. Будут проигнорированы все, кроме первого')
-		tiles = tilesOverShape(extent_gdf.iloc[0].geometry, delta_x=self.tile_crs_size, delta_y=self.tile_crs_size)
+		tiles = grid_over_shape(extent_gdf.iloc[0].geometry, self.crs_code, delta_x=self.tile_crs_size, delta_y=self.tile_crs_size)
 		tiles = tiles.set_crs(self.crs_code)
 		pool_execute(self.get_tile, tiles.to_dict().items())
 		self.merge_tiles(output_path)
@@ -105,7 +106,7 @@ class TilerCreator:
 
 # ************FUNCTIONS********** #
 
-def convertToLocalCsr(geom):
+def convert_to_local_csr(geom):
 	crs = geom.crs
 	if not crs:
 		geom.crs = pyproj.CRS('EPSG:4326')
@@ -116,14 +117,18 @@ def convertToLocalCsr(geom):
 	utm = 'EPSG:32%d%02d' % (polus, zone)
 	return geom.to_crs(utm)
 
-def filterByIntersectProcent(main_polygon : gpd.GeoSeries, tiles : gpd.GeoSeries):
-	intersections = gpd.GeoSeries(crs = main_polygon.crs)
-	for i,v in tiles.iteritems():
-		int_geom = main_polygon.intersection(v)
-		if int_geom.area / v.area >= 0.5:
-			intersections = intersections.append(v, sort=False)
 
-def tilesOverShape(geom, delta_x=None, delta_y=None, x_count=None, y_count=None, filter_by_shape=True, fill_area_filter_factor = 0.0):
+def tiles_filtering(tiles, geom, fill_area_filter_factor):
+	if isinstance(fill_area_filter_factor, float) and 1 > fill_area_filter_factor > 0:
+		int_area = tiles.intersection(geom).area
+		area_ratio =  int_area / tiles.area
+		return tiles[area_ratio > fill_area_filter_factor]
+	else:
+		# это хоть и аналогично fill_area_filter_factor == 0 но работает значительно быстрее
+		return tiles[tiles.intersects(geom)]
+
+
+def grid_over_shape(geom, crs_code, delta_x=None, delta_y=None, x_count=None, y_count=None, filter_by_shape=True, fill_area_filter_factor = 0.0):
 	if not isinstance(geom, (Polygon, MultiPolygon)):
 		raise TypeError(f'Unexpected type for geometry: {type(geom)}')
 	x1, y1, x2, y2 = geom.bounds
@@ -139,18 +144,41 @@ def tilesOverShape(geom, delta_x=None, delta_y=None, x_count=None, y_count=None,
 	df['maxx'] = df['minx'] + delta_x
 	df['maxy'] = df['miny'] + delta_y
 	df['geometry'] = df.apply(lambda x: box(**x.to_dict()), axis=1)
-	regions = gpd.GeoSeries(df['geometry'])
+	regions = gpd.GeoSeries(df['geometry'], crs=crs_code)
 	if filter_by_shape:
-		if fill_area_filter_factor > 0:
-			int_area = regions.intersection(geom).area
-			area_ratio =  int_area / regions.area
-			return regions[area_ratio > fill_area_filter_factor]
-		else:
-			regions = regions[regions.intersects(geom)]
-			return regions
+		return tiles_filtering(regions, geom, fill_area_filter_factor)
 	else:
 		return regions
 
+def tiles_over_shape(geom, zoom, filter_by_shape=True, fill_area_filter_factor = 0.0):
+	'''Generate slippy tile polygons in GeoDataFrame. Only EPSG:4326!'''
+	if not isinstance(geom, (Polygon, MultiPolygon)):
+		raise TypeError(f'Unexpected type for geometry: {type(geom)}')
+	features = []
+	for tile in mercantile.tiles(*geom.bounds, zoom):
+		feature = mercantile.feature(tile)
+		feature['properties'] = {
+			'x': tile.x,
+			'y': tile.y,
+			'z': tile.z,
+		}
+		features.append(feature)
+	gdf = gpd.GeoDataFrame.from_features({'type': 'FeatureCollection', 'features': features}, crs=4326)
+	if filter_by_shape:
+		return tiles_filtering(gdf, geom, fill_area_filter_factor)
+	else:
+		return gdf
+
+
+
+
+
 
 if __name__=='__main__':
-	pass
+	extent = gpd.read_file(r"D:\Litovchenko\YandexDisk\ГИС\isogd mos\MO.geojson")
+	extent = extent.to_crs(4326)
+	geom = extent.iloc[0].geometry
+
+	gdf = tiles_over_shape(geom, 8)
+	gdf.to_file('tiles_test.gpkg', layer='tiles_shapped', driver='GPKG')
+	print(len(gdf))
