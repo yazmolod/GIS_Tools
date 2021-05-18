@@ -154,16 +154,21 @@ def _geo_input_handler(geodata, crs=None):
 			geoseries = geoseries.set_crs(crs)
 	return geoseries
 
-def grid_over_shape(geodata, crs_code, delta_x=None, delta_y=None, x_count=None, y_count=None, filter_by_shape=True, fill_area_filter_factor = 0.0):
+def grid_over_shape(
+	geodata, crs_code, 
+	x_delta=None, y_delta=None, x_count=None, y_count=None, x_factor=None, y_factor=None, 
+	filter_by_shape=True, fill_area_filter_factor = 0.0):
 	"""Создает сетку тайлов поверх входных экстентов
 	
 	Args:
 	    geoseries (geopandas.GeoSeries|geopandas.GeoDataFrame): Экстенты, по котором необходимо создать тайлы
 	    crs_code (str|int): CRS для тайлов
-	    delta_x (float, optional): Description
-	    delta_y (float, optional): Description
-	    x_count (int, optional): Используется, если не заданы delta_x и delta_y. Количество тайлов по оси x, которые должны покрыть bbox экстента
-	    y_count (int, optional): Используется, если не заданы delta_x и delta_y. Количество тайлов по оси y, которые должны покрыть bbox экстента
+	    x_delta (float, optional): Шаг тайла по оси Х
+	    y_delta (float, optional): Шаг тайла по оси Y
+	    x_count (int, optional): Количество тайлов по оси x, которые должны покрыть bbox экстента
+	    y_count (int, optional): Количество тайлов по оси y, которые должны покрыть bbox экстента
+	    x_factor (float, optional): Шаг по X будет равен этому значению умноженному на шаг Y. Нельзя использовать одновременно с y_factor!
+	    y_factor (float, optional): Шаг по Y будет равен этому значению умноженному на шаг X. Нельзя использовать одновременно с x_factor!
 	    filter_by_shape (bool, optional): если True, тайлы bbox'а, которые не пересекаются c экстентом, будут отсечены в противном случае тайлы будут распределены по всему bbox
 	    fill_area_filter_factor (float, optional): коэффициент площади, меньше которой тайл отсекается при filter_by_shape. Например, при коэффициенте равном 0.25, тайл, который покрывает меньше 25% экстента, будет отсечен
 	
@@ -173,17 +178,26 @@ def grid_over_shape(geodata, crs_code, delta_x=None, delta_y=None, x_count=None,
 	geoseries = _geo_input_handler(geodata, crs_code)
 	x1,y1 = geoseries.bounds.min()[['minx', 'miny']]
 	x2,y2 = geoseries.bounds.max()[['maxx', 'maxy']]
-	if delta_x and delta_y:
-		xs = np.arange(x1, x2, delta_x)
-		ys = np.arange(y1, y2, delta_y)
-	elif x_count and y_count:
+	if x_delta:
+		xs = np.arange(x1, x2, x_delta)
+	elif x_count:
 		xs = np.linspace(x1, x2, x_count, endpoint=False)
+		x_delta = xs[1] - xs[0]
+	if y_delta:
+		ys = np.arange(y1, y2, y_delta)
+	elif y_count:
 		ys = np.linspace(y1, y2, y_count, endpoint=False)
-		delta_x = xs[1] - xs[0]
-		delta_y = ys[1] - ys[0]
+		y_delta = ys[1] - ys[0]
+	if x_factor:
+		x_delta = y_delta * x_factor
+		xs = np.arange(x1, x2, x_delta)
+	if y_factor:
+		y_delta = x_delta * y_factor
+		ys = np.arange(y1, y2, y_delta)
+
 	df = gpd.pd.DataFrame(product(xs,ys), columns=['minx', 'miny'])
-	df['maxx'] = df['minx'] + delta_x
-	df['maxy'] = df['miny'] + delta_y
+	df['maxx'] = df['minx'] + x_delta
+	df['maxy'] = df['miny'] + y_delta
 	df['geometry'] = df.apply(lambda x: box(**x.to_dict()), axis=1)
 	tiles = gpd.GeoSeries(df['geometry'], crs=crs_code)
 	if filter_by_shape:
