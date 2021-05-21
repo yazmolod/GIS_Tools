@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_compl
 import logging
 logger = logging.getLogger(__name__)
 
-def pool_execute(func, inputs=None, workers=100, pool_type='thread'):
+def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_input=True):
     if not inputs:
         return []
     if pool_type == 'thread':
@@ -14,9 +14,9 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread'):
     with p_executor(max_workers=workers) as executor: 
         inputs = list(inputs)
         example = inputs[0]
-        if isinstance(example, list) or isinstance(example, tuple):
+        if (isinstance(example, list) or isinstance(example, tuple)) and unpack_input:
             futures = {executor.submit(func, *args):args for args in inputs}
-        elif isinstance(example, dict):
+        elif isinstance(example, dict) and unpack_input:
             futures = {executor.submit(func, **args):args for args in inputs}
         else:
             futures = {executor.submit(func, args):args for args in inputs}
@@ -32,15 +32,15 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread'):
     return result
 
 
-def loop_execute(func, inputs=None):
+def loop_execute(func, inputs=None, unpack_input=True, **kwargs):
     if not inputs:
         return []
     results = []
     for i, item in enumerate(inputs):
         try:
-            if isinstance(item, list) or isinstance(item, tuple):
+            if (isinstance(item, list) or isinstance(item, tuple)) and unpack_input:
                 result = func(*item)
-            elif isinstance(item, dict):
+            elif isinstance(item, dict) and unpack_input:
                 result = func(**item)
             else:
                 result = func(item)
