@@ -14,11 +14,17 @@ from threading import get_ident
 from threading import Lock
 from urllib.parse import urlencode
 
+class ApiCodeExpiredError(Exception):
+    pass
+
+class ProxiesDownloadError(Exception):
+    pass
+
 class ProxyGrabber:
     CACHE_PATH = Path(__file__).parent / 'proxies.json'
     HIDEMY_NAME_API_CODE = '273647900996729'
 
-    def __init__(self, allowed_countries=[], download_method='api'):
+    def __init__(self, allowed_countries=[]):
         '''
         allowed_countries - параметр, по которому фильтруются скаченные/кэшированные прокси по странам, ['RU', 'BY']
         '''
@@ -28,12 +34,6 @@ class ProxyGrabber:
         self.default_speed = 5000
         self.default_types = 's45'
         self.default_minutes_from_last_update = 300
-        if download_method == 'api':
-            self.download = self._api_download
-        elif download_method == 'parse':
-            self.download = self._download
-        else:
-            raise KeyError(f'Неправильный аргумент {download_method}') 
         # качаем сразу
         self.get_proxies_list()
 
@@ -84,14 +84,16 @@ class ProxyGrabber:
                     break
                 else:
                     iproxy += 1
-
-        data = r.json()
-        updated_data = []
-        for d in data:
-            proxy = ProxyGrabber.proxy_from_dict(d)
-            updated_data.append({'proxy': proxy, **d})
-        logger.info('Downloaded: %d' % len(updated_data))
-        ProxyGrabber._writer_cache(updated_data)
+        if r.text == 'NOTFOUND':
+            raise ApiCodeExpiredError()
+        else:
+            data = r.json()
+            updated_data = []
+            for d in data:
+                proxy = ProxyGrabber.proxy_from_dict(d)
+                updated_data.append({'proxy': proxy, **d})
+            logger.info('Downloaded: %d' % len(updated_data))
+            ProxyGrabber._writer_cache(updated_data)
 
 
     @staticmethod
@@ -107,8 +109,18 @@ class ProxyGrabber:
         elif d['http'] == '1':
             return f'http://{ip}:{port}'
 
+    def download(self):
+        try:
+            self._api_download()
+        except ApiCodeExpiredError:
+            try:
+                self._parse_download()
+            except Exception as e:
+                raise ProxiesDownloadError(e)
 
-    def _download(self):
+
+
+    def _parse_download(self):
         '''Скачивает прокси с https://hidemy.name/ и записывает их в кэш. Работает на cloudflare поэтому временами ломается (возможно навечно)'''
         logger.info('Downloading proxies...')
         result = []

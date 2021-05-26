@@ -10,22 +10,29 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
-GRABBER = ProxyGrabber()
 HERE_API_KEY = 'uqDak72P-C8FYyYkI4vz8EDxbNFhBJw4jW-fg9P4lb8'
 
+__GRABBER = None
+def get_grabber():
+    global __GRABBER
+    if __GRABBER is None:
+        __GRABBER = ProxyGrabber()
+    return __GRABBER
+
 def _rosreestr_request(current_kadastr):
+    grabber = get_grabber()
     url = 'https://pkk.rosreestr.ru/api/features/{req_type}?_={time}&text={kadastr}&limit=40&skip=0'
     req_type = 5 - len(current_kadastr.split(':'))
     formatted_url = url.format(kadastr=current_kadastr, time = round(time.time() * 1000), req_type = req_type)
     try:
-        r = requests.get(formatted_url, proxies = GRABBER.get_proxy(), timeout=3)
+        r = requests.get(formatted_url, proxies = grabber.get_proxy(), timeout=3)
     except:
         logger.debug(f'(PKK) request exception [{current_kadastr}]')
-        GRABBER.next_proxy()
+        grabber.next_proxy()
         return _rosreestr_request(current_kadastr)
     if r.status_code == 403:
         logger.debug(f'(PKK) response 403 [{current_kadastr}]')
-        GRABBER.next_proxy()
+        grabber.next_proxy()
         return _rosreestr_request(current_kadastr)
     result = r.json()
     if result['features']:
