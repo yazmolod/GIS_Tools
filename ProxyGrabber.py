@@ -240,7 +240,7 @@ class ProxyGrabber:
     def get_cache_list(self):
         meta_proxies = ProxyGrabber._read_cache()
         if self.allowed_countries:
-            meta_proxies = list(filter(lambda x: self._filter_meta_proxy(x, country_code=self.allowed_countries), meta_proxies))
+            meta_proxies = list(filter(lambda x: self._filter_meta_proxy(x, country=self.allowed_countries), meta_proxies))
         proxies = [i['proxy'] for i in meta_proxies]
         return proxies
 
