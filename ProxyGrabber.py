@@ -143,6 +143,8 @@ class ProxyGrabber:
             pagination = doc.xpath('//div[@class = "pagination"]//a')
             if not pagination:
                 break
+            elif len(pagination) <= 2:
+                last_page = 1
             else:
                 last_page = int(pagination[-2].text)
 
