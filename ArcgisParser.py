@@ -304,11 +304,7 @@ class ArcgisFolder(ArcgisNode):
 		    list: nested folders
 		    list: nested services
 		"""
-		result = self._request(
-			'',
-			self.path,
-			f='json'
-			) 
+		result = self._request('', self.path, f='json') 
 		return result['folders'], result['services']
 
 
@@ -333,8 +329,13 @@ class ArcgisServer(ArcgisFolder):
 		"""Парсит структуру сервера. Необходимо выполнить перед началом любой работы с сервером
 		"""
 		folders, services = self.explore()
-		self.folders = [ArcgisFolder(self, i) for i in folders]
-		self.services = [ArcgisService(self, **i) for i in services]
+		for i in folders:
+			try:
+				self.folders.append(ArcgisFolder(self, i))
+			except:
+				pass
+		for i in services:
+			self.services.append(ArcgisService(self, **i))
 
 	def find_layers(self, layer_name):
 		"""Генератор. Позволяет найти слои с указанным именем на сервере
@@ -366,6 +367,6 @@ class ArcgisServer(ArcgisFolder):
 
 if __name__ == '__main__':
 	logger.debug('start')
-	ARC_SERVER = ArcgisServer('map.novo-sibirsk.ru', 'arcgis')
+	ARC_SERVER = ArcgisServer('pkk.rosreestr.ru', 'arcgis')
 	ARC_SERVER.parse()
 	logger.debug('end')

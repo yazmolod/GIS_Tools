@@ -137,4 +137,6 @@ def save_html(response, path='./debug.html'):
         file.write(response.content)
 
 if __name__ == '__main__':
-    pass
+    driver = start_selenium(seleniumwire_driver=True)
+    driver.scopes = ['.*catalog.api.2gis.ru/3.0/items/byid.*']
+    driver.get('https://2gis.ru/moscow/geo/4504338361749652?m=37.671108%2C55.753157%2F17.03')

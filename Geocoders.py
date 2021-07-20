@@ -11,6 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 HERE_API_KEY = 'uqDak72P-C8FYyYkI4vz8EDxbNFhBJw4jW-fg9P4lb8'
+YANDEX_API_KEY = '3e976513-247e-4072-8b7b-2fd619d45b2c'
 
 __GRABBER = None
 def get_grabber():
@@ -107,16 +108,19 @@ def here(search_string, additional_params = None):
             logger.warning(f'(HERE) Geocoder return empty list')
 
 
-def yandex_map(search_string):
-    pass
+def yandex(search_string):
+    endpoint = 'https://geocode-maps.yandex.ru/1.x'
+    params = {
+        'apikey': YANDEX_API_KEY,
+        'geocode': search_string,
+        'format':'json'
+    }
+    r = requests.get(endpoint, params=params)
+    data = r.json()
+    geodata = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
+    point = Point(list(map(float,geodata['Point']['pos'].split(' '))))
+    return point
 
 if __name__ == '__main__':
-    # current_kadastr = '65:22:0000003:1119'
-    # current_kadastr = '65:22:0000003'
-    # current_kadastr = '14:36:000000:19144; 14:36:107007:43; 14:36:107007:375'
-    # current_kadastr = '  14:36:000000 '
-    # kad_check = re.findall(r'[\d:]+', kn1)
-    # r = rosreestr(current_kadastr)
-
-    address = 'Новосибирская обл, Чулымский р-н, Чулым г, Энгельса ул Новосибирская обл, Чулымский р-н, Чулым г, Энгельса ул, дом 7'
-    r = here(address)
+    address = 'г.Санкт-Петербург, Уткин проспект, дом 15, литера В'
+    r = yandex(address)
