@@ -8,7 +8,10 @@ from shapely.geometry import Polygon, MultiPolygon
 from shapely import wkb
 import os
 from .ThreadsUtils import pool_execute
-from osgeo import gdal
+try:
+	from osgeo import gdal
+except:
+	pass
 from pathlib import Path
 import shutil
 import logging 
