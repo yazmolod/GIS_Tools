@@ -1,6 +1,6 @@
 import requests 
 from requests.exceptions import *
-import ProxyGrabber
+from . import ProxyGrabber
 from pathlib import Path
 from rosreestr2coord import Area
 from shapely.geometry import shape
@@ -88,7 +88,7 @@ def get_attrs(cn, _type):
 		return data
 
 def get_polygon_by_cn(cn, _type):
-	area = Area(code=cn, area_type=item_type[_type], with_log=False, use_cache=True)
+	area = Area(code=cn, area_type=item_type[_type], with_log=False, use_cache=False)
 	feature = area.to_geojson_poly()
 	if feature:		
 		feature = json.loads(feature)
@@ -99,4 +99,4 @@ def get_polygon_by_cn(cn, _type):
 
 
 if __name__ == '__main__':
-	geom = get_polygon_by_cn("78:11:0006019:19", 'ЗУ')
+	geom = get_polygon_by_cn("77:4:2005:129", 'ЗУ')

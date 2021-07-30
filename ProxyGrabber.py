@@ -7,7 +7,6 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, wait
 from time import time
 import logging
-import logging.config
 logger = logging.getLogger(__name__)
 from pathlib import Path
 from threading import get_ident

@@ -3,9 +3,7 @@ import requests
 from shapely.geometry import MultiPoint, Point
 import geopandas as gpd
 from itertools import chain
-
-from ProxyGrabber import ProxyGrabber
-
+from . import ProxyGrabber
 import re
 import logging
 
@@ -120,6 +118,7 @@ def yandex(search_string):
     geodata = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
     point = Point(list(map(float,geodata['Point']['pos'].split(' '))))
     return point
+
 
 if __name__ == '__main__':
     address = 'г.Санкт-Петербург, Уткин проспект, дом 15, литера В'

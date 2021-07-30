@@ -4,7 +4,7 @@ from shapely.ops import linemerge, unary_union, polygonize
 import geopandas as gpd
 from fake_headers import Headers
 import logging
-import ProxyGrabber
+from . import ProxyGrabber
 from time import time, sleep
 import re
 
