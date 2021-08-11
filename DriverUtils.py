@@ -13,6 +13,8 @@ from requests import Session
 from fake_headers import Headers
 from pathlib import Path
 import shutil
+from datetime import datetime
+from uuid import uuid4
 
 
 def start_selenium(
@@ -136,7 +138,14 @@ def save_html(response, path='./debug.html'):
     with open(path, 'wb') as file:
         file.write(response.content)
 
+def save_responses(driver):
+    folder = Path(__file__).parent.resolve() / '__selenium_responses' / datetime.now().strftime('%Y-%m-%d %H_%M_%S')
+    folder.mkdir(parents=True)
+    for r in driver.requests:
+        with open(folder / str(uuid4()), 'wb') as file:
+            file.write(r.response.body)
+
 if __name__ == '__main__':
     driver = start_selenium(seleniumwire_driver=True)
-    driver.scopes = ['.*catalog.api.2gis.ru/3.0/items/byid.*']
-    driver.get('https://2gis.ru/moscow/geo/4504338361749652?m=37.671108%2C55.753157%2F17.03')
+    driver.scopes = ['.*catalog.api.2gis.ru/3.0/items.*']
+    driver.get('https://2gis.ru/ekaterinburg/search/%D0%A1%D1%82%D1%80%D0%BE%D1%8F%D1%89%D0%B8%D0%B5%D1%81%D1%8F%20%D0%BE%D0%B1%D1%8A%D0%B5%D0%BA%D1%82%D1%8B?m=60.618098%2C56.852479%2F14.69')

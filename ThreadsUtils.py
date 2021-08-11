@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_input=True):
+    logger.debug('Start pool_execute...')
     if not inputs:
         return []
     if pool_type == 'thread':

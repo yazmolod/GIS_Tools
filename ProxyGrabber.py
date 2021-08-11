@@ -135,6 +135,7 @@ class ProxyGrabber:
         last_page = -1
 
         while True:
+            logger.debug(f'page: {from_page}')
             params['start'] = (from_page - 1)*64
             url = 'https://hidemy.name/ru/proxy-list/?' + urlencode(params)
             response = scraper.get(url, headers=headers)
@@ -183,7 +184,7 @@ class ProxyGrabber:
     @staticmethod
     def _read_cache():
         '''Чтение кэша с последнего парсинга'''
-        logger.info('Reading cache')
+        logger.debug('Reading cache')
         if ProxyGrabber.CACHE_PATH.exists():
             with open(ProxyGrabber.CACHE_PATH, encoding='utf-8') as file:
                 proxies = json.load(file)
@@ -281,4 +282,7 @@ GLOBAL_LOCK = Lock()
 
 
 if __name__ == '__main__':
+    import FastLogging
+    logger = FastLogging.logger
+    logger.debug('hey')
     pg = ProxyGrabber()

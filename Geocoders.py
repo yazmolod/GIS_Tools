@@ -3,7 +3,10 @@ import requests
 from shapely.geometry import MultiPoint, Point
 import geopandas as gpd
 from itertools import chain
-from . import ProxyGrabber
+if __name__ == '__main__':
+    from ProxyGrabber import ProxyGrabber
+else:
+    from .ProxyGrabber import ProxyGrabber
 import re
 import logging
 
@@ -20,11 +23,18 @@ def get_grabber():
 
 def _rosreestr_request(current_kadastr):
     grabber = get_grabber()
-    url = 'https://pkk.rosreestr.ru/api/features/{req_type}?_={time}&text={kadastr}&limit=40&skip=0'
+    cad = []
+    for i in current_kadastr.split(':'):
+        cad_part = i.lstrip('0')
+        if not cad_part:
+            cad.append('0')
+        else:
+            cad.append(cad_part)
+    current_kadastr = ':'.join(cad)
     req_type = 5 - len(current_kadastr.split(':'))
-    formatted_url = url.format(kadastr=current_kadastr, time = round(time.time() * 1000), req_type = req_type)
+    url = f'https://pkk.rosreestr.ru/api/features/{req_type}/{current_kadastr}?date_format=%c&_={round(time.time() * 1000)}'
     try:
-        r = requests.get(formatted_url, proxies = grabber.get_proxy(), timeout=3)
+        r = requests.get(url, proxies = grabber.get_proxy(), timeout=3)
     except:
         logger.debug(f'(PKK) request exception [{current_kadastr}]')
         grabber.next_proxy()
@@ -34,12 +44,21 @@ def _rosreestr_request(current_kadastr):
         grabber.next_proxy()
         return _rosreestr_request(current_kadastr)
     result = r.json()
-    if result['features']:
-        center = result['features'][0].get('center')
+    feature = result.get('feature')
+    if feature:
+        center = feature.get('center')
+        extent_parent = feature.get('extent_parent')
         if center:
             pt = Point(center['x'], center['y'])
             pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
             logger.info(f'(PKK) Kadastr geocoded [{current_kadastr}]')
+            return pt
+        elif extent_parent:
+            x = (extent_parent['xmin'] + extent_parent['xmax'])/2
+            y = (extent_parent['ymin'] + extent_parent['ymax'])/2
+            pt = Point(x, y)
+            pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
+            logger.info(f'(PKK) Kadastr geocoded by parent [{current_kadastr}]')
             return pt
         else:
             logger.warning(f'(PKK) No center in feature [{current_kadastr}]')
@@ -121,5 +140,7 @@ def yandex(search_string):
 
 
 if __name__ == '__main__':
-    address = 'г.Санкт-Петербург, Уткин проспект, дом 15, литера В'
-    r = yandex(address)
+    import FastLogging
+    logger = FastLogging.logger
+    logger.debug('test')
+    rosreestr('50:03:0000000:166')

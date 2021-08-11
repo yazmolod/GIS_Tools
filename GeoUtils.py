@@ -1,3 +1,5 @@
+import logging 
+logger = logging.getLogger(__name__)
 import geopandas as gpd 
 from shapely.geometry import * 
 import pyproj
@@ -11,13 +13,11 @@ from .ThreadsUtils import pool_execute
 try:
 	from osgeo import gdal
 except:
-	pass
+	logger.error('Loading osgeo.gdal is failed. GeoTiffer is unavalaible')
 from pathlib import Path
 import shutil
-import logging 
 import mercantile
 
-logger = logging.getLogger(__name__)
 
 class GeoTiffer:
 	"""
@@ -185,12 +185,18 @@ def grid_over_shape(
 		xs = np.arange(x1, x2, x_delta)
 	elif x_count:
 		xs = np.linspace(x1, x2, x_count, endpoint=False)
-		x_delta = xs[1] - xs[0]
+		if x_count == 1:
+			x_delta = x2 - x1
+		else:
+			x_delta = xs[1] - xs[0]
 	if y_delta:
 		ys = np.arange(y1, y2, y_delta)
 	elif y_count:
 		ys = np.linspace(y1, y2, y_count, endpoint=False)
-		y_delta = ys[1] - ys[0]
+		if y_count == 1:
+			y_delta = y2 - y1
+		else:
+			y_delta = ys[1] - ys[0]
 	if x_factor:
 		x_delta = y_delta * x_factor
 		xs = np.arange(x1, x2, x_delta)
