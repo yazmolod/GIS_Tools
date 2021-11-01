@@ -148,4 +148,4 @@ def save_responses(driver):
 if __name__ == '__main__':
     driver = start_selenium(seleniumwire_driver=True)
     driver.scopes = ['.*catalog.api.2gis.ru/3.0/items.*']
-    driver.get('https://2gis.ru/ekaterinburg/search/%D0%A1%D1%82%D1%80%D0%BE%D1%8F%D1%89%D0%B8%D0%B5%D1%81%D1%8F%20%D0%BE%D0%B1%D1%8A%D0%B5%D0%BA%D1%82%D1%8B?m=60.618098%2C56.852479%2F14.69')
+    driver.get('https://2gis.ru/kazan')

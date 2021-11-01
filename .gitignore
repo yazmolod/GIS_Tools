@@ -129,3 +129,4 @@ proxies.json
 _webdrivers/
 responses/
 __selenium_responses/
+tmp/

@@ -1,6 +1,9 @@
 import requests 
 from requests.exceptions import *
-from . import ProxyGrabber
+if __name__ == '__main__':
+	import ProxyGrabber
+else:
+	from . import ProxyGrabber
 from pathlib import Path
 from rosreestr2coord import Area
 from shapely.geometry import shape

@@ -143,4 +143,4 @@ if __name__ == '__main__':
     import FastLogging
     logger = FastLogging.logger
     logger.debug('test')
-    rosreestr('50:03:0000000:166')
+    rosreestr('22:8:11216:95')
