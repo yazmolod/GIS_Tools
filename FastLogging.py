@@ -1,12 +1,19 @@
 import logging
 
 FORMATTER = logging.Formatter("[%(asctime)s][%(name)s] %(levelname)s - %(message)s")
-HANDLER = logging.StreamHandler()
-HANDLER.setLevel(logging.DEBUG)
-HANDLER.setFormatter(FORMATTER)
+STREAM_HANDLER = logging.StreamHandler()
+STREAM_HANDLER.setLevel(logging.DEBUG)
+STREAM_HANDLER.setFormatter(FORMATTER)
 
-def get_logger(name):
+
+def getLogger(name, stream=True, file=None):
 	logger = logging.getLogger(name)
 	logger.setLevel(logging.DEBUG)
-	logger.addHandler(HANDLER)
+	if stream:
+		logger.addHandler(STREAM_HANDLER)
+	if file:
+		FILE_HANDLER = logging.FileHandler(f'{file}')
+		FILE_HANDLER.setLevel(logging.INFO)
+		FILE_HANDLER.setFormatter(FORMATTER)
+		logger.addHandler(FILE_HANDLER)
 	return logger

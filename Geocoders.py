@@ -39,8 +39,8 @@ def _rosreestr_request(current_kadastr):
         logger.debug(f'(PKK) request exception [{current_kadastr}]')
         grabber.next_proxy()
         return _rosreestr_request(current_kadastr)
-    if r.status_code == 403:
-        logger.debug(f'(PKK) response 403 [{current_kadastr}]')
+    if r.status_code != 200:
+        logger.debug(f'(PKK) bad response [{current_kadastr}], {r.status_code}')
         grabber.next_proxy()
         return _rosreestr_request(current_kadastr)
     result = r.json()
@@ -134,13 +134,18 @@ def yandex(search_string):
     }
     r = requests.get(endpoint, params=params)
     data = r.json()
-    geodata = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
-    point = Point(list(map(float,geodata['Point']['pos'].split(' '))))
-    return point
+    features = data['response']['GeoObjectCollection']['featureMember']
+    if features:
+        geodata = features[0]['GeoObject']
+        point = Point(list(map(float,geodata['Point']['pos'].split(' '))))
+        return point
+    else:
+        logger.warning(f'(YANDEX) Not found "{search_string}"')
 
 
 if __name__ == '__main__':
     import FastLogging
-    logger = FastLogging.logger
-    logger.debug('test')
-    rosreestr('22:8:11216:95')
+    logger = FastLogging.get_logger(__name__)
+    # pt = yandex('москва разина 1')
+    pt = rosreestr(' 22:  8:112  16:95', deep_search=True)
+    # logger.debug('test')
