@@ -1,7 +1,6 @@
 import time
 import requests
 from shapely.geometry import MultiPoint, Point
-import geopandas as gpd
 from pyproj import Transformer
 from itertools import chain
 if __name__ == '__main__':
