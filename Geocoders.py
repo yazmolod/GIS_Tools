@@ -2,6 +2,7 @@ import time
 import requests
 from shapely.geometry import MultiPoint, Point
 import geopandas as gpd
+from pyproj import Transformer
 from itertools import chain
 if __name__ == '__main__':
     from ProxyGrabber import ProxyGrabber
@@ -49,17 +50,16 @@ def _rosreestr_request(current_kadastr):
         center = feature.get('center')
         extent_parent = feature.get('extent_parent')
         if center:
-            pt = Point(center['x'], center['y'])
-            pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
+            x,y = center['x'], center['y']
             logger.info(f'(PKK) Kadastr geocoded [{current_kadastr}]')
-            return pt
         elif extent_parent:
             x = (extent_parent['xmin'] + extent_parent['xmax'])/2
             y = (extent_parent['ymin'] + extent_parent['ymax'])/2
-            pt = Point(x, y)
-            pt = gpd.GeoSeries(pt, crs=3857).to_crs(4326)[0]
             logger.info(f'(PKK) Kadastr geocoded by parent [{current_kadastr}]')
-            return pt
+        if x and y:
+            transformer = Transformer.from_crs("epsg:3857", "epsg:4326")
+            x, y = transformer.transform(x, y)
+            return Point(x, y)          
         else:
             logger.warning(f'(PKK) No center in feature [{current_kadastr}]')
     else:
@@ -145,7 +145,7 @@ def yandex(search_string):
 
 if __name__ == '__main__':
     import FastLogging
-    logger = FastLogging.get_logger(__name__)
+    logger = FastLogging.getLogger(__name__)
     # pt = yandex('москва разина 1')
-    pt = rosreestr(' 22:  8:112  16:95', deep_search=True)
+    pt = rosreestr(' 22:8:11216:95', deep_search=True)
     # logger.debug('test')
