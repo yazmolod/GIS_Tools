@@ -12,7 +12,7 @@ def getLogger(name, stream=True, file=None):
 	if stream:
 		logger.addHandler(STREAM_HANDLER)
 	if file:
-		FILE_HANDLER = logging.FileHandler(f'{file}')
+		FILE_HANDLER = logging.FileHandler(f'{file}', 'a', encoding='utf-8')
 		FILE_HANDLER.setLevel(logging.INFO)
 		FILE_HANDLER.setFormatter(FORMATTER)
 		logger.addHandler(FILE_HANDLER)
