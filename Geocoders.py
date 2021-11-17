@@ -56,7 +56,7 @@ def _rosreestr_request(current_kadastr):
             y = (extent_parent['ymin'] + extent_parent['ymax'])/2
             logger.info(f'(PKK) Kadastr geocoded by parent [{current_kadastr}]')
         if x and y:
-            transformer = Transformer.from_crs("epsg:3857", "epsg:4326")
+            transformer = Transformer.from_crs("epsg:3857", "epsg:4326", always_xy=True)
             x, y = transformer.transform(x, y)
             return Point(x, y)          
         else:
