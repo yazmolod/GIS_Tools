@@ -18,6 +18,7 @@ import json
 from pyproj import Transformer
 from itertools import chain
 import re
+import shutil
 import logging
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ def rosreestr(kadastr, deep_search=False):
             current_kadastr = ':'.join(kad_numbers[: i + 1 ])
             pt = _rosreestr_request(current_kadastr)
             if pt:
-                return pt  
+                return pt
 
 KADASTR_TYPES = {k:v for k,v in TYPES.items() if k in ['Участки', 'ОКС']}
 def _rosreestr_geom(kadastr, center_only):
@@ -100,7 +101,7 @@ def _rosreestr_geom(kadastr, center_only):
     kadastr = _validate_kadastr(kadastr)
     for kadastr_type_alias, kadastr_type in KADASTR_TYPES.items():
         logger.debug(f'(PKK Geom) Try geocode {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
-        area = Area(code=kadastr, area_type=kadastr_type, use_cache=True, center_only=center_only)
+        area = Area(code=kadastr, area_type=kadastr_type, use_cache=True, center_only=center_only, media_path=str(Path(__file__).resolve().parent))
         geom_method = area.to_geojson_center if center_only else area.to_geojson_poly
         feature_string = geom_method()
         if feature_string:
@@ -118,6 +119,10 @@ def rosreestr_point(kadastr):
 
 def rosreestr_polygon(kadastr):
     return _rosreestr_geom(kadastr, center_only=False)
+
+def delete_rosreestr_cache():
+    path = Path(__file__).parent.resolve() / 'rosreestr_cache'
+    shutil.rmtree(str(path))
 
 def here(search_string, additional_params=None):
     # избавляемся от переносов строки, табуляции и прочего
@@ -185,4 +190,6 @@ if __name__ == '__main__':
     _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
     _2 = FastLogging.getLogger('mylib.rosreestr2coord')
     _3 = FastLogging.getLogger('rosreestr2coord')
-    pl = rosreestr_polygon('23:43:0106012:4122')
+    # pl = rosreestr_polygon('05:41:000077:104')
+    # pl = rosreestr_polygon('77:01:0001051:120')
+    delete_rosreestr_cache()

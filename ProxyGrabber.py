@@ -230,10 +230,10 @@ class ProxyGrabber:
                     if any_match:
                         flags.append(True)
                     else:
-                        logger.debug(f'No match on filter {k}')
+                        # logger.debug(f'No match on filter {k}')
                         flags.append(False)
                 else:
-                    logger.debug(f'None value for {k} for {proxy}')
+                    # logger.debug(f'None value for {k} for {proxy}')
                     flags.append(False)
             else:
                 raise KeyError(f'Неправильный ключ для фильтрации прокси - {k}. Доступные ключи - {proxy.keys()}')
