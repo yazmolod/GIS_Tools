@@ -38,7 +38,9 @@ def _validate_kadastr(kadastr):
         raise TypeError(f'"{kadastr}" не является поддерживаемым форматом для геокодирования')
     return kad_check[0]
 
-def _rosreestr_request(current_kadastr):
+def _rosreestr_request(current_kadastr, recursive=1):
+    if recursive >= 10:
+        return
     grabber = get_grabber()
     cad = []
     for i in current_kadastr.split(':'):
@@ -55,11 +57,11 @@ def _rosreestr_request(current_kadastr):
     except:
         logger.debug(f'(PKK Point) request exception [{current_kadastr}]')
         grabber.next_proxy()
-        return _rosreestr_request(current_kadastr)
+        return _rosreestr_request(current_kadastr, recursive+1)
     if r.status_code != 200:
         logger.debug(f'(PKK) bad response [{current_kadastr}], {r.status_code}')
         grabber.next_proxy()
-        return _rosreestr_request(current_kadastr)
+        return _rosreestr_request(current_kadastr, recursive+1)
     result = r.json()
     feature = result.get('feature')
     if feature:
