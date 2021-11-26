@@ -113,7 +113,6 @@ def _rosreestr_geom(kadastr, center_only):
             return geom
         else:
             logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
-            (Path(area.workspace) / "feature_info.json").unlink()   # удаляем кэш, так как был неверный тип 
     logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
 
 def rosreestr_point(kadastr):
@@ -169,19 +168,20 @@ def here(search_string, additional_params=None):
         else:
             logger.warning(f'(HERE) Geocoder return empty list')
 
+
 def yandex(search_string):
     endpoint = 'https://geocode-maps.yandex.ru/1.x'
     params = {
         'apikey': YANDEX_API_KEY,
         'geocode': search_string,
-        'format':'json'
+        'format': 'json'
     }
     r = requests.get(endpoint, params=params)
     data = r.json()
     features = data['response']['GeoObjectCollection']['featureMember']
     if features:
         geodata = features[0]['GeoObject']
-        point = Point(list(map(float,geodata['Point']['pos'].split(' '))))
+        point = Point(list(map(float, geodata['Point']['pos'].split(' '))))
         return point
     else:
         logger.warning(f'(YANDEX) Not found "{search_string}"')
@@ -193,5 +193,5 @@ if __name__ == '__main__':
     _2 = FastLogging.getLogger('mylib.rosreestr2coord')
     _3 = FastLogging.getLogger('rosreestr2coord')
     # pl = rosreestr_polygon('05:41:000077:104')
-    # pl = rosreestr_polygon('77:01:0001051:120')
-    delete_rosreestr_cache()
+    pl = rosreestr_polygon('24:50:0000000:176247')
+    # delete_rosreestr_cache()
