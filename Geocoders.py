@@ -178,13 +178,16 @@ def yandex(search_string):
     }
     r = requests.get(endpoint, params=params)
     data = r.json()
-    features = data['response']['GeoObjectCollection']['featureMember']
-    if features:
-        geodata = features[0]['GeoObject']
-        point = Point(list(map(float, geodata['Point']['pos'].split(' '))))
-        return point
+    if data.get('statusCode') == 403:
+        logger.error('(YANDEX) API key blocked')
     else:
-        logger.warning(f'(YANDEX) Not found "{search_string}"')
+        features = data['response']['GeoObjectCollection']['featureMember']
+        if features:
+            geodata = features[0]['GeoObject']
+            point = Point(list(map(float, geodata['Point']['pos'].split(' '))))
+            return point
+        else:
+            logger.warning(f'(YANDEX) Not found "{search_string}"')
 
 
 if __name__ == '__main__':
@@ -192,6 +195,4 @@ if __name__ == '__main__':
     _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
     _2 = FastLogging.getLogger('mylib.rosreestr2coord')
     _3 = FastLogging.getLogger('rosreestr2coord')
-    # pl = rosreestr_polygon('05:41:000077:104')
-    pl = rosreestr_polygon('24:50:0000000:176247')
-    # delete_rosreestr_cache()
+    pl = rosreestr_polygon('50:28:0000000:25')
