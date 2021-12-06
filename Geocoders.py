@@ -109,7 +109,10 @@ def _rosreestr_geom(kadastr, center_only):
         if feature_string:
             feature = json.loads(feature_string)
             logger.info(f'(PKK Geom) Geocoded {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
-            geom = shape(feature['geometry'])
+            if geom_type == 'Point':
+                geom = shape(feature['features'][0]['geometry'])
+            else:
+                geom = shape(feature['geometry'])
             return geom
         else:
             logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
@@ -195,4 +198,10 @@ if __name__ == '__main__':
     _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
     _2 = FastLogging.getLogger('mylib.rosreestr2coord')
     _3 = FastLogging.getLogger('rosreestr2coord')
-    pl = rosreestr_polygon('50:28:0000000:25')
+    pt1 = rosreestr_point('77:03:0010008:27484')
+    pt2 = rosreestr_point('77:01:0005004:4677')
+    pl1 = rosreestr_polygon('77:03:0010008:27484')
+    pl2 = rosreestr_polygon('77:01:0005004:4677')
+    # pt = yandex('Москва вернадского 9')
+    # area = Area(code='77:03:0010008:27484', area_type=1, use_cache=True, center_only=True, media_path=str(Path(__file__).resolve().parent))
+    # feature = area.to_geojson_center()
