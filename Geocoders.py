@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 HERE_API_KEY = 'uqDak72P-C8FYyYkI4vz8EDxbNFhBJw4jW-fg9P4lb8'
-YANDEX_API_KEY = '3e976513-247e-4072-8b7b-2fd619d45b2c'
+YANDEX_API_KEY = '55f0bc08-9bce-41d8-879a-3fa76e935a0a'
 
 __GRABBER = None
 def get_grabber():
