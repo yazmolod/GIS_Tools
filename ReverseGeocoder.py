@@ -1,9 +1,15 @@
+from GIS_Tools.config import HERE_API_KEY
 import geopandas as gpd
 from pathlib import Path
 import re
 from shapely.geometry import Point, MultiPoint
 import logging
 logger = logging.getLogger(__name__)
+from GIS_Tools import ProxyGrabber
+import time
+import requests
+import warnings
+warnings.filterwarnings("ignore")
 
 RUSSIA_CITIES = RUSSIA_REGIONS = None
 def get_cities_df():
@@ -49,6 +55,42 @@ def extract_region_by_point(pt):
         if len(reg)>0:
             return reg.iloc[0]
 
+def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
+    grabber = ProxyGrabber.get_grabber()
+    url = 'https://pkk.rosreestr.ru/api/features/'
+    for i in range(min_tolerance, max_tolerance):
+        params = {
+            'text':f'{pt.y} {pt.x}',
+            'tolerance':2**i,
+            'types':str(types),
+            '_':round(time.time() * 1000),
+        }
+        try:
+            r = requests.get(url, params=params, verify=False, proxies=grabber.get_proxy(), timeout=3)
+            if int(r.json()['total']):
+                return r.json()['results']
+        except:
+            grabber.next_proxy()
+            return kadastr_by_point(pt, types, min_tolerance=i, max_tolerance=max_tolerance)
+
+def here_address_by_point(pt):
+    params = {
+        'at':f'{pt.y},{pt.x}',
+        'apiKey':HERE_API_KEY,
+        'lang':'ru-RU'
+    }
+    url = f'https://revgeocode.search.hereapi.com/v1/revgeocode'
+    r = requests.get(url, params=params)
+    items = r.json()['items']
+    closest_item = min(items, key=lambda x: x.get('distance', 0))
+    return closest_item['address']['label']
+
 
 if __name__ == '__main__':
-    reg = extract_region_by_address('Самара')
+    import ThreadsUtils
+    import FastLogging
+    from tqdm import tqdm
+    tqdm.pandas()
+    gdf = gpd.read_file(r"D:\Litovchenko\YandexDisk\ГИС\_quick tasks\гаражи\floors\garage.gpkg", layer='with_floors')
+    gdf['here.address'] = gdf['geometry'].progress_apply(here_address_by_point)
+    gdf.to_file(r"D:\Litovchenko\YandexDisk\ГИС\_quick tasks\гаражи\floors\garage.gpkg", layer='with_floors_and_address', driver='GPKG')
