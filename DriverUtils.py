@@ -15,6 +15,8 @@ from pathlib import Path
 import shutil
 from datetime import datetime
 from uuid import uuid4
+import platform
+from pyvirtualdisplay import Display
 
 
 def start_selenium(
@@ -23,6 +25,11 @@ def start_selenium(
     timeout = 60, 
     is_headless = False,
     **kwargs):
+
+    if platform.system() == 'Linux':
+        display = Display(visible=0, size=(1280, 1024))
+        display.start()
+
     if seleniumwire_driver:
         driver_module = xhr_webdriver
     else:
@@ -103,8 +110,7 @@ def set_cookie(cookie_container, domain, cookie_path):
     with open(cookie_path, 'rb') as file:
         cookies = pickle.load(file)   
         if isinstance(cookie_container, Session):
-            cookies = [{i['name']:i['value']} for i in cookies]
-            print (cookies)
+            cookies = {i['name']:i['value'] for i in cookies}
             cookie_container.cookies.update(cookies)
         else:
             for cookie in cookies: 
@@ -146,6 +152,15 @@ def save_responses(driver):
             file.write(r.response.body)
 
 if __name__ == '__main__':
-    driver = start_selenium(seleniumwire_driver=True)
-    driver.scopes = ['.*catalog.api.2gis.ru/3.0/items.*']
-    driver.get('https://2gis.ru/kazan')
+    driver = start_selenium()
+    driver.get('https://www.avito.ru/rossiya/zemelnye_uchastki/prodam-ASgBAgICAUSWA9oQ?f=ASgBAgECAUSWA9oQAUWUCRh7ImZyb20iOjE0Mzk2LCJ0byI6bnVsbH0&map=eyJ6b29tIjo2fQ%3D%3D')
+
+    # driver2 = start_selenium(seleniumwire_driver=True)
+    # driver2 = transfer_cookie(driver1, driver2, 'https://www.avito.ru')
+    # driver1.quit()
+
+    # driver.scopes = ['.*catalog.api.2gis.ru/3.0/items.*']
+    # driver.get('https://2gis.ru/kazan')
+
+    ses = start_session()
+    transfer_cookie(driver, ses, 'https://www.avito.ru/')
