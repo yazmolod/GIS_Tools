@@ -1,8 +1,5 @@
-if __name__ == '__main__':
-    import FastLogging
-    from ProxyGrabber import ProxyGrabber
-else:
-    from .ProxyGrabber import ProxyGrabber
+from GIS_Tools import ProxyGrabber
+from GIS_Tools.config import HERE_API_KEY, YANDEX_API_KEY
 
 import warnings
 from rosreestr2coord import Area, VERSION
@@ -22,15 +19,6 @@ import shutil
 import logging
 logger = logging.getLogger(__name__)
 
-HERE_API_KEY = 'uqDak72P-C8FYyYkI4vz8EDxbNFhBJw4jW-fg9P4lb8'
-YANDEX_API_KEY = '55f0bc08-9bce-41d8-879a-3fa76e935a0a'
-
-__GRABBER = None
-def get_grabber():
-    global __GRABBER
-    if __GRABBER is None:
-        __GRABBER = ProxyGrabber()
-    return __GRABBER
 
 def _validate_kadastr(kadastr):
     kad_check = re.findall(r'[\d:]+', kadastr)
@@ -41,7 +29,7 @@ def _validate_kadastr(kadastr):
 def _rosreestr_request(current_kadastr, recursive=1):
     if recursive >= 10:
         return
-    grabber = get_grabber()
+    grabber = ProxyGrabber.get_grabber()
     cad = []
     for i in current_kadastr.split(':'):
         cad_part = i.lstrip('0')
@@ -194,14 +182,16 @@ def yandex(search_string):
 
 
 if __name__ == '__main__':
+    import FastLogging
     logger = FastLogging.getLogger(__name__)
-    _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
-    _2 = FastLogging.getLogger('mylib.rosreestr2coord')
-    _3 = FastLogging.getLogger('rosreestr2coord')
-    pt1 = rosreestr_point('77:03:0010008:27484')
-    pt2 = rosreestr_point('77:01:0005004:4677')
-    pl1 = rosreestr_polygon('77:03:0010008:27484')
-    pl2 = rosreestr_polygon('77:01:0005004:4677')
-    # pt = yandex('Москва вернадского 9')
-    # area = Area(code='77:03:0010008:27484', area_type=1, use_cache=True, center_only=True, media_path=str(Path(__file__).resolve().parent))
-    # feature = area.to_geojson_center()
+    # _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
+    # _2 = FastLogging.getLogger('mylib.rosreestr2coord')
+    # _3 = FastLogging.getLogger('rosreestr2coord')
+    s = '77:01:0001076:34; 77:01:0001076:2948; 77:01:0001076:79'
+    cads = re.findall(r'\d+:\d+:\d+:\d+', s)
+    geometry = []
+    for cad in cads:
+        poly = rosreestr_polygon(cad)
+        geometry.append(poly)
+    import geopandas as gpd
+    gpd.GeoDataFrame(zip(cads, geometry), columns=['cad', 'geometry']).to_file('test.gpkg', driver='GPKG')
