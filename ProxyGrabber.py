@@ -37,7 +37,7 @@ class ProxyGrabber:
     HIDEMY_NAME_API_CODE = '273647900996729'
     PROXIES = None
 
-    def __init__(self, allowed_countries=[]):
+    def __init__(self, allowed_countries=[], use_api=False):
         '''
         allowed_countries - параметр, по которому фильтруются скаченные/кэшированные прокси по странам, ['RU', 'BY']
         '''
@@ -47,6 +47,7 @@ class ProxyGrabber:
         self.default_speed = 5000
         self.default_types = 's45'
         self.default_minutes_from_last_update = 300
+        self.use_api = use_api
         # качаем сразу
         self.init_proxies()
 
@@ -120,14 +121,17 @@ class ProxyGrabber:
 
     def download(self):
         result = None
-        try:
-            result = self._api_download()
-        except Exception as e:
-            logger.error(f'Error api download: {e}')
+        if self.use_api:
             try:
-                result = self._parse_download()
+                result = self._api_download()
             except Exception as e:
-                logger.error(f'Error parse download: {e}')
+                logger.error(f'Error api download')
+            else:
+                return result
+        try:
+            result = self._parse_download()
+        except Exception as e:
+            logger.error(f'Error parse download')
         return result
 
 
@@ -282,15 +286,21 @@ class ProxyGrabber:
         self.PROXIES = proxies
 
 
-    def get_proxy(self):
+    def get_proxy(self, format_type='requests'):
         if self.PROXIES_INDEX == -1:
-            return {'http': None, 'https': None}
+            proxy = None
         else:
             proxy = self.PROXIES[self.PROXIES_INDEX]
+        if format_type=='requests':
             return {'http': proxy, 'https': proxy}
+        elif format_type=='selenium':
+            if proxy:
+                return proxy.split('/')[-1]
+        else:
+            raise TypeError(f'Uknown format type "{format_type}"')
 
 
-    def next_proxy(self):
+    def next_proxy(self, format_type='requests'):
         if self.PROXIES: 
             self._increase_index()
             if self.PROXIES_INDEX >= len(self.PROXIES):
@@ -300,7 +310,7 @@ class ProxyGrabber:
         else:
             logger.error('NO PROXIES FOUND')
             warnings.warn('Proxies not founded!', UserWarning, stacklevel=2)
-        return self.get_proxy()
+        return self.get_proxy(format_type=format_type)
 
 
 GLOBAL_LOCK = Lock()
