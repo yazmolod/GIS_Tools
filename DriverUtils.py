@@ -24,8 +24,8 @@ def start_selenium(
     seleniumwire_driver=False, 
     timeout = 60, 
     is_headless = False,
+    proxy=None,
     **kwargs):
-
     if platform.system() == 'Linux':
         display = Display(visible=0, size=(1280, 1024))
         display.start()
@@ -40,13 +40,22 @@ def start_selenium(
         driver_path = Path(__file__).parent / '_webdrivers' / 'gecko.exe'
         webdriver_manager = GeckoDriverManager()
         options = firefox_options()
+        caps = webdriver.DesiredCapabilities.FIREFOX
     elif driver_type=='chrome':
         driver_class = driver_module.Chrome
         driver_path = Path(__file__).parent / '_webdrivers' / 'chrome.exe'
         webdriver_manager = ChromeDriverManager()
         options = chrome_options()
+        caps = webdriver.DesiredCapabilities.CHROME
     else:
         raise NotImplementedError(f"Запуск драйвера {driver_type} не реализован")
+
+    if proxy:
+        caps['proxy'] = {
+            "proxyType": "MANUAL",
+            "httpProxy": proxy,
+            "sslProxy": proxy
+        }
 
     driver_path = driver_path.resolve()
     if not driver_path.exists():
@@ -55,7 +64,7 @@ def start_selenium(
         shutil.copy(cache_path, str(driver_path))
 
     options.headless = is_headless
-    driver = driver_class(options=options, executable_path=str(driver_path))
+    driver = driver_class(options=options, executable_path=str(driver_path), capabilities=caps)
     if not is_headless:
         driver.maximize_window()
     driver.set_page_load_timeout(timeout)
@@ -152,15 +161,17 @@ def save_responses(driver):
             file.write(r.response.body)
 
 if __name__ == '__main__':
-    driver = start_selenium()
-    driver.get('https://www.avito.ru/rossiya/zemelnye_uchastki/prodam-ASgBAgICAUSWA9oQ?f=ASgBAgECAUSWA9oQAUWUCRh7ImZyb20iOjE0Mzk2LCJ0byI6bnVsbH0&map=eyJ6b29tIjo2fQ%3D%3D')
-
-    # driver2 = start_selenium(seleniumwire_driver=True)
-    # driver2 = transfer_cookie(driver1, driver2, 'https://www.avito.ru')
-    # driver1.quit()
-
-    # driver.scopes = ['.*catalog.api.2gis.ru/3.0/items.*']
-    # driver.get('https://2gis.ru/kazan')
-
-    ses = start_session()
-    transfer_cookie(driver, ses, 'https://www.avito.ru/')
+    from GIS_Tools import ProxyGrabber
+    grabber = ProxyGrabber.get_grabber()
+    from selenium.common.exceptions import TimeoutException
+    proxy = grabber.next_proxy(format_type='selenium')
+    while True:
+        print(proxy)
+        try:
+            driver = start_selenium(proxy=proxy, timeout=120)
+            driver.get('https://www.cian.ru/')
+        except TimeoutException:
+            driver.quit()
+            proxy = grabber.next_proxy()
+        else:
+            break
