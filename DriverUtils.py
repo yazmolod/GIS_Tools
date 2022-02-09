@@ -100,6 +100,15 @@ def start_session():
     ses.headers = Headers().generate()
     return ses
 
+def session_with_cookies(domain, sleep_time=0):
+    ses = start_session()
+    dr = start_selenium()
+    dr.get(domain)
+    time.sleep(sleep_time)
+    transfer_cookie(dr, ses, domain)
+    dr.quit()
+    return ses
+
 def transfer_cookie(fr, to, domain):
     save_cookie(fr, 'temp.cookie')
     set_cookie(to, domain, 'temp.cookie')
@@ -154,24 +163,11 @@ def save_html(response, path='./debug.html'):
         file.write(response.content)
 
 def save_responses(driver):
-    folder = Path(__file__).parent.resolve() / '__selenium_responses' / datetime.now().strftime('%Y-%m-%d %H_%M_%S')
+    folder = Path(__file__).parent.resolve() / '_selenium_responses' / datetime.now().strftime('%Y-%m-%d %H_%M_%S')
     folder.mkdir(parents=True)
     for r in driver.requests:
         with open(folder / str(uuid4()), 'wb') as file:
             file.write(r.response.body)
 
 if __name__ == '__main__':
-    from GIS_Tools import ProxyGrabber
-    grabber = ProxyGrabber.get_grabber()
-    from selenium.common.exceptions import TimeoutException
-    proxy = grabber.next_proxy(format_type='selenium')
-    while True:
-        print(proxy)
-        try:
-            driver = start_selenium(proxy=proxy, timeout=120)
-            driver.get('https://www.cian.ru/')
-        except TimeoutException:
-            driver.quit()
-            proxy = grabber.next_proxy()
-        else:
-            break
+    pass

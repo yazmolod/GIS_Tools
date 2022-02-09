@@ -181,17 +181,6 @@ def yandex(search_string):
             logger.warning(f'(YANDEX) Not found "{search_string}"')
 
 
+
 if __name__ == '__main__':
-    import FastLogging
-    logger = FastLogging.getLogger(__name__)
-    # _1 = FastLogging.getLogger('GIS_Tools.ProxyGrabber')
-    # _2 = FastLogging.getLogger('mylib.rosreestr2coord')
-    # _3 = FastLogging.getLogger('rosreestr2coord')
-    s = '77:01:0001076:34; 77:01:0001076:2948; 77:01:0001076:79'
-    cads = re.findall(r'\d+:\d+:\d+:\d+', s)
-    geometry = []
-    for cad in cads:
-        poly = rosreestr_polygon(cad)
-        geometry.append(poly)
-    import geopandas as gpd
-    gpd.GeoDataFrame(zip(cads, geometry), columns=['cad', 'geometry']).to_file('test.gpkg', driver='GPKG')
+    pass

@@ -9,7 +9,7 @@ import numpy as np
 from shapely.geometry import Polygon, MultiPolygon
 from shapely import wkb
 import os
-from .ThreadsUtils import pool_execute
+from GIS_Tools.ThreadsUtils import pool_execute
 try:
 	from osgeo import gdal
 except:
@@ -259,8 +259,4 @@ def geopandas_drop_duplicates(geodata):
 
 
 if __name__=='__main__':
-	extent = gpd.read_file("test_multi_extent.geojson")
-
-	# gdf = grid_over_shape(extent, 3857, x_count=100, y_count=200, filter_by_shape=True, fill_area_filter_factor=0.1)
-	gdf = tiles_over_shape(extent, 12)
-	gdf.to_file('tiles_test.gpkg', layer='tiles_shapped', driver='GPKG')
+	pass
