@@ -11,12 +11,15 @@ import time
 import requests
 import warnings
 import json
-warnings.filterwarnings("ignore")
-
 
 RUSSIA_CITIES = RUSSIA_REGIONS = None
 RUSSIA_REGIONS_PATH = (Path(__file__).parent / "Russia_boundaries.gpkg").resolve()
 def get_cities_gdf():
+    """Возращает GeoDataFrame всех городов России
+    
+    Returns:
+        GeoDataFrame: слой городов России с данными из Википедии
+    """
     global RUSSIA_CITIES
     if RUSSIA_CITIES is None:
         RUSSIA_CITIES = gpd.read_file(RUSSIA_REGIONS_PATH, layer='cities')
@@ -24,6 +27,11 @@ def get_cities_gdf():
 
 
 def get_regions_gdf():
+    """Возращает GeoDataFrame всех регионов России
+    
+    Returns:
+        GeoDataFrame: слой регионов России (OSM)
+    """
     global RUSSIA_REGIONS
     if RUSSIA_REGIONS is None:
         RUSSIA_REGIONS = gpd.read_file(RUSSIA_REGIONS_PATH, layer='regions')
@@ -31,6 +39,14 @@ def get_regions_gdf():
 
 
 def extract_city(address):
+    """Функция поиска названия города в неподготовленной сырой строке
+    
+    Args:
+        address (str): сырая строка адреса
+    
+    Returns:
+        str: название города
+    """
     if isinstance(address, str):
         cities = get_cities_gdf()['Город'].tolist()
         cities_pattern = '(' + '|'.join(['\\b' + i + '\\b' for i in set(cities)]) + ')'
@@ -40,6 +56,14 @@ def extract_city(address):
 
 
 def extract_region_by_address(address):
+    """Функция поиска региона в неподготовленной сырой строке
+    
+    Args:
+        address (str): сырая строка адреса
+    
+    Returns:
+        str: название региона
+    """
     if isinstance(address, str):
         regions = get_cities_gdf()['Регион_re'].tolist()
         regions_pattern = '(' + '|'.join([i for i in set(regions)]) + ')'
@@ -56,14 +80,38 @@ def extract_region_by_address(address):
 
 
 def extract_region_by_point(pt):
+    """Находит регион по точке
+    
+    Args:
+        pt ([shapely.geometry.Point, shapely.geometry.MultiPoint]): точка поиска
+    
+    Returns:
+        str: название региона
+    
+    Raises:
+        TypeError: неизвестный тип геометрии
+    """
     if isinstance(pt, Point) or isinstance(pt, MultiPoint):
         russia_regions = get_regions_gdf()
         reg = russia_regions.loc[russia_regions['geometry'].contains(pt), 'name']
         if len(reg)>0:
             return reg.iloc[0]
+    else:
+        raise TypeError(f'Unknown type {type(pt)}')
 
 
 def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
+    """Summary
+    
+    Args:
+        pt (TYPE): Description
+        types (TYPE): Description
+        min_tolerance (int, optional): Description
+        max_tolerance (int, optional): Description
+    
+    Returns:
+        TYPE: Description
+    """
     grabber = ProxyGrabber.get_grabber()
     url = 'https://pkk.rosreestr.ru/api/features/'
     for i in range(min_tolerance, max_tolerance):
@@ -83,6 +131,14 @@ def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
 
 
 def here_address_by_point(pt):
+    """Ищет адрес по точке при помощи HERE API. Требуется ключ api в переменных среды
+    
+    Args:
+        pt (shapely.geometry.Point): точка поиска
+    
+    Returns:
+        str: строковый адрес
+    """
     params = {
         'at':f'{pt.y},{pt.x}',
         'apiKey':HERE_API_KEY,
@@ -96,6 +152,19 @@ def here_address_by_point(pt):
 
 
 def kadastr_in_boundary(geom, cn_type):
+    """Функция обращается к api pkk.rosreestr, а именно к функции нахождение кадастровых участков 
+    в границах геометрии, обозначенной пользователем
+    
+    Args:
+        geom ([shapely.geometry.Polygon, geopandas.GeoDataFrame, geopandas.GeoSeries]): границы поиска
+        cn_type (int): тип участка (перечислены в GIS_Tools.Geocoders.KADASTR_TYPES)
+    
+    Yields:
+        dict: json-ответ сервера с атрибутами участка
+    
+    Raises:
+        TypeError: Неизвестный тип геометрии границ участка
+    """
     def make_request(cn_type, data):
         grabber = ProxyGrabber.get_grabber()
         try:
@@ -151,6 +220,8 @@ def kadastr_in_boundary(geom, cn_type):
 
 
 def kadastr_poly_in_boundary(geom, cn_type):
+    """Функция аналогична kadastr_in_boundary, но также добавляет геометрию участка в ответ
+    """
     for attr in kadastr_in_boundary(geom, cn_type):
         poly = Geocoders.rosreestr_polygon(attr['cn'])
         attr['geometry'] = poly

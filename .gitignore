@@ -125,7 +125,7 @@ dmypy.json
 .pyre/
 
 # 
-proxies.json
+_proxies.json
 _webdrivers/
 responses/
 __selenium_responses/

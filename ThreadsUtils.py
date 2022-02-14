@@ -3,6 +3,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_input=True):
+    """Simple use of python threading pool
+    
+    Args:
+        func (function): pool function
+        inputs (None, optional): args for function
+        workers (int, optional): count of pool workers
+        pool_type (str, optional): pool type - thread or process
+        unpack_input (bool, optional): if true, will unpack list-like inputs in args. Else use input as is
+    
+    Returns:
+        list: func results
+    
+    Raises:
+        TypeError: when use unknown type in pool_type
+    """
     logger.debug('Start pool_execute...')
     if not inputs:
         return []
@@ -25,7 +40,7 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_inpu
         for f in as_completed(futures):
             try:    
                 result.append(f.result())
-            except:
+            except Exception:
                 logger.exception(f'FATAL ERROR on args {futures[f]}')
                 return result
             else:
@@ -34,6 +49,8 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_inpu
 
 
 def loop_execute(func, inputs=None, unpack_input=True, **kwargs):
+    """Same as pool_execute, but it doesn't use threading or multiprocessing - just iterate inputs
+    """
     if not inputs:
         return []
     results = []

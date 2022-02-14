@@ -73,6 +73,16 @@ def _rosreestr_request(current_kadastr, recursive=1):
         logger.warning(f'(PKK Point) No features in response [{current_kadastr}]')
 
 def rosreestr(kadastr, deep_search=False):
+    """Устаревший метод геокодирование кадастра центроидом при помощи прямого обращения к pkk.rosreestr.api
+    Рекомендуется использовать Geocoders.rosreestr_point вместо него
+    
+    Args:
+        kadastr (str): кадастровый номер
+        deep_search (bool, optional): продолжать поиск при отсутствии результата, укрупняя поиск (от участка к кварталам и т.д.)
+    
+    Returns:
+        shapely.geometry.Point
+    """
     warnings.warn('Method Geocoders.rosreestr is deprecated; use Geocoders.rosreestr_point', DeprecationWarning, stacklevel=2)
     kadastr = _validate_kadastr(kadastr)
     if not deep_search:
@@ -87,6 +97,16 @@ def rosreestr(kadastr, deep_search=False):
 
 KADASTR_TYPES = {k:v for k,v in TYPES.items() if k in ['Участки', 'ОКС']}
 def _rosreestr_geom(kadastr, center_only):
+    """Обертка для функций библиотеки rosreestr2coord. Пытается найти геометрию кадастрового номера, 
+    перебирая все известные типы участков
+    
+    Args:
+        kadastr (str): кадастровый номер
+        center_only (bool): истина, если необходим только центроид, иначе полигон
+    
+    Returns:
+        shapely.geometry: результат работы rosreestr2coord, переведенный из geojson в shapely-геометрию
+    """
     geom_type = 'Point' if center_only else 'Polygon'
     kadastr = _validate_kadastr(kadastr)
     for kadastr_type_alias, kadastr_type in KADASTR_TYPES.items():
@@ -107,16 +127,43 @@ def _rosreestr_geom(kadastr, center_only):
     logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
 
 def rosreestr_point(kadastr):
+    """Возращает центроид кадастрового участка при помощи библиотеки rosreestr2coords
+    
+    Args:
+        kadastr (str): кадастровый номер
+    
+    Returns:
+        shapelt.geometry.Point: центроид кадастрового участка
+    """
     return _rosreestr_geom(kadastr, center_only=True)
 
 def rosreestr_polygon(kadastr):
+    """Возращает полигоны кадастрового участка при помощи библиотеки rosreestr2coords
+    
+    Args:
+        kadastr (str): кадастровый номер
+    
+    Returns:
+        shapelt.geometry.MultiPolygon: полигоны кадастрового участка
+    """
     return _rosreestr_geom(kadastr, center_only=False)
 
 def delete_rosreestr_cache():
+    """Удаляет кэш участков с росреестра
+    """
     path = Path(__file__).parent.resolve() / 'rosreestr_cache'
     shutil.rmtree(str(path))
 
 def here(search_string, additional_params=None):
+    """Геокодирует адрес с помощью HERE API (требуется ключ в переменных среды)
+    
+    Args:
+        search_string (str): адрес
+        additional_params (dict, optional): дополнительные параметры запроса
+    
+    Returns:
+        shapely.geometry.Point: ответ сервера - точка в epsg4326
+    """
     # избавляемся от переносов строки, табуляции и прочего
     search_string = re.sub(r'\s+', ' ', search_string)
     # убираем повторяющиеся лексемы из запроса
@@ -161,6 +208,14 @@ def here(search_string, additional_params=None):
 
 
 def yandex(search_string):
+    """Геокодирует адрес с помощью YANDEX MAP API (требуется ключ в переменных среды)
+    
+    Args:
+        search_string (str): адрес
+    
+    Returns:
+        shapely.geometry.Point: ответ сервера - точка в epsg4326
+    """
     endpoint = 'https://geocode-maps.yandex.ru/1.x'
     params = {
         'apikey': YANDEX_API_KEY,
@@ -179,8 +234,3 @@ def yandex(search_string):
             return point
         else:
             logger.warning(f'(YANDEX) Not found "{search_string}"')
-
-
-
-if __name__ == '__main__':
-    pass

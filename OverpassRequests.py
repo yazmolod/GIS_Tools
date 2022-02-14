@@ -54,7 +54,6 @@ def node_handler(node):
 	s['geometry'] = Point(node['lon'], node['lat'])
 	return s
 
-
 def way_handler(way):
 	bounds = way.get('bounds', [])
 	nodes = way.get('nodes', [])

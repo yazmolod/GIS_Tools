@@ -7,6 +7,8 @@ STREAM_HANDLER.setFormatter(FORMATTER)
 
 
 def getLogger(name, stream=True, file=None):
+	"""быстро включает логгер, когда лень настраивать нормальный
+	"""
 	logger = logging.getLogger(name)
 	logger.setLevel(logging.DEBUG)
 	if stream:

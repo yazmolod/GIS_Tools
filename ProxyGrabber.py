@@ -1,4 +1,5 @@
 from fake_headers import Headers
+from GIS_Tools.config import HIDEMY_NAME_API_CODE
 import cloudscraper
 from lxml import html
 import re
@@ -33,8 +34,7 @@ def get_grabber(*args, **kwargs):
     return ACTIVE_GRABBERS[thread_id]
 
 class ProxyGrabber:
-    CACHE_PATH = Path(__file__).parent / 'proxies.json'
-    HIDEMY_NAME_API_CODE = '273647900996729'
+    CACHE_PATH = Path(__file__).parent / '_proxies.json'
     PROXIES = None
 
     def __init__(self, allowed_countries=[], use_api=False):
@@ -314,10 +314,3 @@ class ProxyGrabber:
 
 
 GLOBAL_LOCK = Lock()
-
-
-if __name__ == '__main__':
-    import FastLogging
-    logger = FastLogging.getLogger(__name__)
-    logger.debug('hey')
-    pg = ProxyGrabber()
