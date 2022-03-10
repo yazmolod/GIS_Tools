@@ -148,6 +148,19 @@ def rosreestr_polygon(kadastr):
     """
     return _rosreestr_geom(kadastr, center_only=False)
 
+def iterate_kadastrs(string):
+    """Извлекает кадастровые номера из сырой строки
+    
+    Args:
+        string (str): вводная строка
+    
+    Yields:
+        str: кадастровый номер
+    """
+    if isinstance(string, str):
+        for i in re.findall(r'\d+:\d+:\d+:\d+', string):
+            yield i
+
 def delete_rosreestr_cache():
     """Удаляет кэш участков с росреестра
     """
@@ -181,11 +194,11 @@ def here(search_string, additional_params=None):
     'apiKey': HERE_API_KEY,
     'lang': 'ru-RU'
     }
-    url = f'https://geocode.search.hereapi.com/v1/geocode?q={params["q"]}&apiKey={params["apiKey"]}&lang=ru-RU'
+    url = f'https://geocode.search.hereapi.com/v1/geocode'
     if additional_params:
         params = {**params, **additional_params}
     try:
-        r = requests.get(url)
+        r = requests.get(url, params=params)
         if r.status_code == 429:
             time.sleep(1)
             return here(search_string, additional_params=None)
@@ -234,3 +247,10 @@ def yandex(search_string):
             return point
         else:
             logger.warning(f'(YANDEX) Not found "{search_string}"')
+
+
+if __name__ == '__main__':
+    from GIS_Tools import FastLogging
+    _ = FastLogging.getLogger('rosreestr2coord')
+    _ = FastLogging.getLogger(__name__)
+    poly = rosreestr_polygon('77:09:0001029:2')
