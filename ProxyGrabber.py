@@ -204,9 +204,11 @@ class ProxyGrabber:
         '''Чтение кэша с последнего парсинга'''
         logger.debug('Reading cache')
         if ProxyGrabber.CACHE_PATH.exists():
-            with open(ProxyGrabber.CACHE_PATH, encoding='utf-8') as file:
-                proxies = json.load(file)
-            return proxies
+            try:
+                proxies = json.loads(ProxyGrabber.CACHE_PATH.read_bytes())
+                return proxies
+            except json.JSONDecodeError:
+                pass
         else:
             raise FileNotFoundError("No proxy cache found, try to download")
 
@@ -314,3 +316,7 @@ class ProxyGrabber:
 
 
 GLOBAL_LOCK = Lock()
+
+if __name__ == '__main__':
+    gr = get_grabber()
+    
