@@ -9,8 +9,10 @@ if 'yazmo' not in VERSION:
 
 import time
 import requests
-from shapely.geometry import MultiPoint, Point, shape
+from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon
+from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
+from geopandas import GeoSeries
 import json
 from pyproj import Transformer
 from itertools import chain
@@ -247,6 +249,39 @@ def yandex(search_string):
             return point
         else:
             logger.warning(f'(YANDEX) Not found "{search_string}"')
+
+def amo_style_geocoding(data, cn_key, address_key):
+    cn = data.get(cn_key, None)
+    address = data.get(address_key, None)
+    if isinstance(cn, str):
+        logger.debug(f'Try geocode by cns: {cn}')
+        polygons = []
+        for cur_cn in iterate_kadastrs(cn):
+            logger.debug(f'Current cn: {cur_cn}')
+            try:
+                poly = rosreestr_polygon(cur_cn)
+                if poly:
+                    logger.debug(f'Success geocode cn: {cur_cn}')
+                    polygons.append(poly)
+            except:
+                logger.exception(f'Except trying geocode by cadastr {cur_cn}')
+        if polygons:
+            return MultiPolygon(chain.from_iterable(polygons))
+    if isinstance(address, str):
+        logger.debug(f'Try geocode by address: {address}')
+        try:
+            pt = here(address)
+            if pt is not None:
+                gs = GeoSeries([pt], crs=4326)
+                gs = convert_to_local_csr(gs)
+                gs = gs.buffer(25)
+                logger.debug(f'Success geocode address: {address}')
+                return gs.to_crs(4326).iloc[0]
+            else:
+                logger.debug(f'Failed geocode address: {address}')
+        except:
+          logger.exception(f'Except trying geocode by address {address}')
+    return MultiPolygon([Polygon([[0.0, 0.0],[0.0,0.1],[0.1,0.1],[0.1,0.0]])])
 
 
 if __name__ == '__main__':
