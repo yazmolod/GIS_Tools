@@ -168,3 +168,6 @@ def save_responses(driver):
     for r in driver.requests:
         with open(folder / str(uuid4()), 'wb') as file:
             file.write(r.response.body)
+
+if __name__ == '__main__':
+    driver = start_selenium(seleniumwire_driver=False)

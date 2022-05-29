@@ -37,7 +37,7 @@ class ProxyGrabber:
     CACHE_PATH = Path(__file__).parent / '_proxies.json'
     PROXIES = None
 
-    def __init__(self, allowed_countries=[], use_api=False):
+    def __init__(self, allowed_countries=[], use_api=True):
         '''
         allowed_countries - параметр, по которому фильтруются скаченные/кэшированные прокси по странам, ['RU', 'BY']
         '''
@@ -80,7 +80,7 @@ class ProxyGrabber:
         'out': 'js',
         'maxtime': self.default_speed,
         'type': self.default_types,
-        'code': ProxyGrabber.HIDEMY_NAME_API_CODE
+        'code': HIDEMY_NAME_API_CODE
         }
 
         r = requests.get(url, params=params)
@@ -318,5 +318,8 @@ class ProxyGrabber:
 GLOBAL_LOCK = Lock()
 
 if __name__ == '__main__':
+    from GIS_Tools import FastLogging
+    _ = FastLogging.getLogger(__name__)
     gr = get_grabber()
+    p = gr._api_download()
     
