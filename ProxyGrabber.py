@@ -101,7 +101,7 @@ class ProxyGrabber:
             for d in data:
                 proxy = ProxyGrabber.proxy_from_dict(d)
                 updated_data.append({'proxy': proxy, **d})
-            logger.info('API Downloaded: %d' % len(updated_data))
+            logger.info('Downloaded: %d' % len(updated_data))
             return updated_data
 
 
@@ -184,7 +184,7 @@ class ProxyGrabber:
             from_page += 1
             if last_page < from_page:
                 break
-        logger.info('Parse Downloaded: %d' % len(result))
+        logger.info('Downloaded: %d' % len(result))
         return result
 
 
