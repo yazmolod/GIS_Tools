@@ -4,7 +4,7 @@ from GIS_Tools import Geocoders
 import geopandas as gpd
 from pathlib import Path
 import re
-from shapely.geometry import Point, MultiPoint, Polygon
+from shapely.geometry import Point, MultiPoint, Polygon, MultiPolygon
 import logging
 logger = logging.getLogger(__name__)
 import time
@@ -99,6 +99,31 @@ def extract_region_by_point(pt):
     else:
         raise TypeError(f'Unknown type {type(pt)}')
 
+def add_region_name_to_geodataframe(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries: 
+    """Добавляет название региона по точке
+    
+    Args:
+        gdf (gpd.GeoDataFrame): исходный датафрейм с точками
+    
+    Returns:
+        gpd.GeoSeries: название регионов
+
+    Raises:
+        TypeError: на входе не GeoDataFrame
+    """
+    if not isinstance(gdf, gpd.GeoDataFrame):
+        raise TypeError('Только GeoDataFrame')
+    elif len(gdf) == 0:
+        raise TypeError('Пустой GeoDataFrame')
+    elif 'geometry' not in gdf.columns:
+        raise TypeError('Нет колонки geometry')
+    elif not isinstance(gdf['geometry'].dropna().iloc[0], Point):
+        raise TypeError('Принимается только точечная геометрия')
+    else:
+        regions = get_regions_gdf().rename({'name': 'region'}, axis=1)
+        merged = gpd.sjoin(gdf, regions, how='left', op='within')
+        merged = merged.drop('index_right', axis=1)
+        return merged
 
 def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
     """Summary
@@ -166,27 +191,41 @@ def kadastr_in_boundary(geom, cn_type):
         TypeError: Неизвестный тип геометрии границ участка
     """
     def make_request(cn_type, data):
-        grabber = ProxyGrabber.get_grabber()
+        # grabber = ProxyGrabber.get_grabber()
         try:
             r = requests.post(f'https://pkk.rosreestr.ru/api/features/{cn_type}?_={round(time.time() * 1000)}', 
                 files=data,
                 verify=False,
-                proxies=grabber.get_proxy(),
+                # proxies=grabber.get_proxy(),
                 timeout=3,
                 )
-        except Exception:
-            grabber.next_proxy()
+        except Exception as e:
+            logger.error(e)
+            time.sleep(1)
+            # grabber.next_proxy()
             return make_request(cn_type, data)
         else:
             return r
     if isinstance(geom, Polygon):
         polygons = [geom]
+    if isinstance(geom, MultiPolygon):
+        polygons = [i for i in geom]
     elif isinstance(geom, gpd.GeoDataFrame):
         polygons = geom['geometry'].tolist()
     elif isinstance(geom, gpd.GeoSeries):
         polygons = geom.tolist()
     else:
         raise TypeError(f'Unsupported type {type(geom)}')
+    iter_polygons = polygons[:]
+    polygons = []
+    for i in iter_polygons:
+        if isinstance(i, Polygon):
+            polygons.append(i)
+        elif isinstance(i, MultiPolygon):
+            for p in i:
+                polygons.append(p)
+        else:
+            raise TypeError(f'Unsupported geometry type {type(i)}')
     geom_list = []
     for poly in polygons:
         x,y = poly.exterior.coords.xy
