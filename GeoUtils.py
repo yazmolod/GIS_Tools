@@ -149,7 +149,7 @@ def _geo_input_handler(geodata, crs=None):
 	elif isinstance(geodata, Path) or isinstance(geodata, str):
 		geoseries = gpd.read_file(str(geodata)).geometry
 	else:
-		raise TypeError(geodata)
+		raise TypeError(type(geodata))
 	if crs:
 		if geoseries.crs:
 			geoseries = geoseries.to_crs(crs)

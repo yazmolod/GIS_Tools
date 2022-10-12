@@ -135,7 +135,7 @@ def rosreestr_point(kadastr):
         kadastr (str): кадастровый номер
     
     Returns:
-        shapelt.geometry.Point: центроид кадастрового участка
+        shapely.geometry.Point: центроид кадастрового участка
     """
     return _rosreestr_geom(kadastr, center_only=True)
 
@@ -146,7 +146,7 @@ def rosreestr_polygon(kadastr):
         kadastr (str): кадастровый номер
     
     Returns:
-        shapelt.geometry.MultiPolygon: полигоны кадастрового участка
+        shapely.geometry.MultiPolygon: полигоны кадастрового участка
     """
     return _rosreestr_geom(kadastr, center_only=False)
 
