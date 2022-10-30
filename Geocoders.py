@@ -123,7 +123,7 @@ def _rosreestr_geom(kadastr, center_only):
                 geom = shape(feature['features'][0]['geometry'])
             else:
                 geom = shape(feature['geometry'])
-            return geom
+            return geom, area.get_attrs()
         else:
             logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
     logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
