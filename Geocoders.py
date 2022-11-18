@@ -31,7 +31,7 @@ def _validate_kadastr(kadastr):
 
 KADASTR_TYPES = {k:v for k,v in TYPES.items() if k in ['Участки', 'ОКС']}
 def _rosreestr_geom(kadastr, center_only):
-    """Обертка для функций библиотеки rosreestr2coord. Пытается найти геометрию кадастрового номера, 
+    """Обертка для функций библиотеки rosreestr2coord. Пытается найти геометрию и атрибуты кадастрового номера,
     перебирая все известные типы участков
     
     Args:
@@ -40,6 +40,7 @@ def _rosreestr_geom(kadastr, center_only):
     
     Returns:
         shapely.geometry: результат работы rosreestr2coord, переведенный из geojson в shapely-геометрию
+        dict: атрибуты участка
     """
     geom_type = 'Point' if center_only else 'Polygon'
     kadastr = _validate_kadastr(kadastr)
@@ -62,7 +63,7 @@ def _rosreestr_geom(kadastr, center_only):
     return None, None
 
 def rosreestr_point(kadastr):
-    """Возращает центроид кадастрового участка при помощи библиотеки rosreestr2coords
+    """Возращает центроид и атрибуты кадастрового участка при помощи библиотеки rosreestr2coords
     
     Args:
         kadastr (str): кадастровый номер
@@ -74,7 +75,7 @@ def rosreestr_point(kadastr):
     return _rosreestr_geom(kadastr, center_only=True)
 
 def rosreestr_polygon(kadastr):
-    """Возращает полигоны кадастрового участка при помощи библиотеки rosreestr2coords
+    """Возращает полигоны и атрибуты кадастрового участка при помощи библиотеки rosreestr2coords
     
     Args:
         kadastr (str): кадастровый номер
