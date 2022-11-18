@@ -144,6 +144,19 @@ def add_region_name_to_geodataframe(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
         merged = merged.drop('index_right', axis=1)
         return merged
 
+
+def make_pkk_request(method, url, **kwargs):
+    recursion = kwargs.pop('recursion', 0)
+    if recursion >= 10:
+        raise RecursionError()
+    else:
+        try:
+            r = requests.request(method, url, verify=False, timeout=5, **kwargs)
+            return r
+        except Exception as e:
+            return make_pkk_request(method, url, recursion=recursion+1, **kwargs)
+
+
 def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
     """Summary
     
@@ -156,7 +169,6 @@ def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
     Returns:
         TYPE: Description
     """
-    grabber = ProxyGrabber.get_grabber()
     url = 'https://pkk.rosreestr.ru/api/features/'
     for i in range(min_tolerance, max_tolerance):
         params = {
@@ -165,13 +177,9 @@ def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
             'types':str(types),
             '_':round(time.time() * 1000),
         }
-        try:
-            r = requests.get(url, params=params, verify=False, proxies=grabber.get_proxy(), timeout=3)
-            if int(r.json()['total']):
-                return r.json()['results']
-        except:
-            grabber.next_proxy()
-            return kadastr_by_point(pt, types, min_tolerance=i, max_tolerance=max_tolerance)
+        r = make_pkk_request('get', url, params=params)
+        if int(r.json()['total']):
+            return r.json()['results']
 
 
 def here_address_by_point(pt):
@@ -209,22 +217,6 @@ def kadastr_in_boundary(geom, cn_type):
     Raises:
         TypeError: Неизвестный тип геометрии границ участка
     """
-    def make_request(cn_type, data):
-        # grabber = ProxyGrabber.get_grabber()
-        try:
-            r = requests.post(f'https://pkk.rosreestr.ru/api/features/{cn_type}?_={round(time.time() * 1000)}', 
-                files=data,
-                verify=False,
-                # proxies=grabber.get_proxy(),
-                timeout=3,
-                )
-        except Exception as e:
-            logger.error(e)
-            time.sleep(1)
-            # grabber.next_proxy()
-            return make_request(cn_type, data)
-        else:
-            return r
     if isinstance(geom, Polygon):
         polygons = [geom]
     if isinstance(geom, MultiPolygon):
@@ -265,7 +257,10 @@ def kadastr_in_boundary(geom, cn_type):
     while True:
         logger.info(f'Extract cns from polygon: page {page+1}')
         data['skip'] = page*40
-        r = make_request(cn_type, data)
+        params = {
+            '_': round(time.time() * 1000),
+        }
+        r = make_pkk_request('post', f'https://pkk.rosreestr.ru/api/features/{cn_type}', params=params, files=data)
         result = r.json()
         if result['total'] == 0:
             logger.debug(f'Empty response')
@@ -284,12 +279,3 @@ def kadastr_poly_in_boundary(geom, cn_type):
         poly = Geocoders.rosreestr_polygon(attr['cn'])
         attr['geometry'] = poly
         yield attr
-
-
-if __name__ == '__main__':
-    from GIS_Tools import FastLogging
-    _ = FastLogging.getLogger(__name__)
-    _ = FastLogging.getLogger('GIS_Tools.Geocoders')
-    gdf = gpd.read_file('test.gpkg')['geometry']
-    gpd.GeoDataFrame([x for x in kadastr_poly_in_boundary(gdf, 1)]).to_file('test.gpkg', layer='1', crs=4326, driver='GPKG')
-    # gpd.GeoDataFrame([x for x in kadastr_poly_in_boundary(gdf, 5)]).to_file('test.gpkg', layer='5', crs=4326, driver='GPKG')
