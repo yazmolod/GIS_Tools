@@ -28,74 +28,6 @@ def _validate_kadastr(kadastr):
         raise TypeError(f'"{kadastr}" не является поддерживаемым форматом для геокодирования')
     return kad_check[0]
 
-def _rosreestr_request(current_kadastr, recursive=1):
-    if recursive >= 10:
-        return
-    grabber = ProxyGrabber.get_grabber()
-    cad = []
-    for i in current_kadastr.split(':'):
-        cad_part = i.lstrip('0')
-        if not cad_part:
-            cad.append('0')
-        else:
-            cad.append(cad_part)
-    current_kadastr = ':'.join(cad)
-    req_type = 5 - len(current_kadastr.split(':'))
-    url = f'https://pkk.rosreestr.ru/api/features/{req_type}/{current_kadastr}?date_format=%c&_={round(time.time() * 1000)}'
-    try:
-        r = requests.get(url, proxies = grabber.get_proxy(), timeout=3)
-    except:
-        logger.debug(f'(PKK Point) request exception [{current_kadastr}]')
-        grabber.next_proxy()
-        return _rosreestr_request(current_kadastr, recursive+1)
-    if r.status_code != 200:
-        logger.debug(f'(PKK) bad response [{current_kadastr}], {r.status_code}')
-        grabber.next_proxy()
-        return _rosreestr_request(current_kadastr, recursive+1)
-    result = r.json()
-    feature = result.get('feature')
-    if feature:
-        center = feature.get('center')
-        extent_parent = feature.get('extent_parent')
-        x = y = None
-        if center:
-            x,y = center['x'], center['y']
-            logger.info(f'(PKK Point) Kadastr geocoded [{current_kadastr}]')
-        elif extent_parent:
-            x = (extent_parent['xmin'] + extent_parent['xmax'])/2
-            y = (extent_parent['ymin'] + extent_parent['ymax'])/2
-            logger.info(f'(PKK Point) Kadastr geocoded by parent [{current_kadastr}]')
-        if x and y:
-            transformer = Transformer.from_crs("epsg:3857", "epsg:4326", always_xy=True)
-            x, y = transformer.transform(x, y)
-            return Point(x, y)          
-        else:
-            logger.warning(f'(PKK Point) No center in feature [{current_kadastr}]')
-    else:
-        logger.warning(f'(PKK Point) No features in response [{current_kadastr}]')
-
-def rosreestr(kadastr, deep_search=False):
-    """Устаревший метод геокодирование кадастра центроидом при помощи прямого обращения к pkk.rosreestr.api
-    Рекомендуется использовать Geocoders.rosreestr_point вместо него
-    
-    Args:
-        kadastr (str): кадастровый номер
-        deep_search (bool, optional): продолжать поиск при отсутствии результата, укрупняя поиск (от участка к кварталам и т.д.)
-    
-    Returns:
-        shapely.geometry.Point
-    """
-    warnings.warn('Method Geocoders.rosreestr is deprecated; use Geocoders.rosreestr_point', DeprecationWarning, stacklevel=2)
-    kadastr = _validate_kadastr(kadastr)
-    if not deep_search:
-        return _rosreestr_request(kadastr)
-    else:
-        kad_numbers = kadastr.split(':')    
-        for i in reversed(range(0, len(kad_numbers))):
-            current_kadastr = ':'.join(kad_numbers[: i + 1 ])
-            pt = _rosreestr_request(current_kadastr)
-            if pt:
-                return pt
 
 KADASTR_TYPES = {k:v for k,v in TYPES.items() if k in ['Участки', 'ОКС']}
 def _rosreestr_geom(kadastr, center_only):
@@ -127,6 +59,7 @@ def _rosreestr_geom(kadastr, center_only):
         else:
             logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
     logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
+    return None, None
 
 def rosreestr_point(kadastr):
     """Возращает центроид кадастрового участка при помощи библиотеки rosreestr2coords
@@ -136,6 +69,7 @@ def rosreestr_point(kadastr):
     
     Returns:
         shapely.geometry.Point: центроид кадастрового участка
+        dict: атрибуты участка
     """
     return _rosreestr_geom(kadastr, center_only=True)
 
@@ -147,6 +81,7 @@ def rosreestr_polygon(kadastr):
     
     Returns:
         shapely.geometry.MultiPolygon: полигоны кадастрового участка
+        dict: атрибуты участка
     """
     return _rosreestr_geom(kadastr, center_only=False)
 
