@@ -38,7 +38,7 @@ def get_regions_gdf():
     return RUSSIA_REGIONS
 
 
-def extract_city(address):
+def extract_city_by_address(address):
     """Функция поиска названия города в неподготовленной сырой строке
     
     Args:
@@ -54,6 +54,25 @@ def extract_city(address):
         if result:
             return result[0].capitalize()
 
+def extract_city_by_point(pt):
+    """Находит город по точке
+
+    Args:
+        pt ([shapely.geometry.Point, shapely.geometry.MultiPoint]): точка поиска
+
+    Returns:
+        str: название города
+
+    Raises:
+        TypeError: неизвестный тип геометрии
+    """
+    if isinstance(pt, Point) or isinstance(pt, MultiPoint):
+        russia_cities = get_cities_gdf()
+        reg = russia_cities.loc[russia_cities['geometry'].contains(pt), 'Город']
+        if len(reg) > 0:
+            return reg.iloc[0]
+    else:
+        raise TypeError(f'Unknown type {type(pt)}')
 
 def extract_region_by_address(address):
     """Функция поиска региона в неподготовленной сырой строке
