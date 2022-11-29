@@ -1,3 +1,4 @@
+import shapely.errors
 from GIS_Tools.config import HERE_API_KEY
 from GIS_Tools import ProxyGrabber
 from GIS_Tools import Geocoders
@@ -12,8 +13,21 @@ import requests
 import warnings
 import json
 
-RUSSIA_CITIES = RUSSIA_REGIONS = None
+RUSSIA_CITIES = RUSSIA_REGIONS = RUSSIA_COUNTRY = None
 RUSSIA_REGIONS_PATH = (Path(__file__).parent / "Russia_boundaries.gpkg").resolve()
+
+
+def get_country_gdf():
+    """Возращает GeoDataFrame с границами России
+
+    Returns:
+        GeoDataFrame:
+    """
+    global RUSSIA_COUNTRY
+    if RUSSIA_COUNTRY is None:
+        RUSSIA_COUNTRY = gpd.read_file(RUSSIA_REGIONS_PATH, layer='russia')
+    return RUSSIA_COUNTRY
+
 def get_cities_gdf():
     """Возращает GeoDataFrame всех городов России
     
@@ -91,7 +105,7 @@ def extract_region_by_address(address):
             region = get_cities_gdf().loc[get_cities_gdf()['Регион_re'].str.lower() == result[0].lower(), 'Регион'].iloc[0]
             return region
         else:
-            city = extract_city(address)
+            city = extract_city_by_address(address)
             if city:
                 region = get_cities_gdf().loc[get_cities_gdf()['Город'].str.lower() == city.lower(), 'Регион']
                 if len(region)>0:
