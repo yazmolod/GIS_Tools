@@ -12,7 +12,7 @@ import requests
 from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon
 from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 import json
 from pyproj import Transformer
 from itertools import chain
@@ -85,6 +85,24 @@ def rosreestr_polygon(kadastr):
         dict: атрибуты участка
     """
     return _rosreestr_geom(kadastr, center_only=False)
+
+
+def rosreestr_geodataframe(cns):
+    """Возращает полигоны и атрибуты кадастрового участка при помощи библиотеки rosreestr2coords
+
+    Args:
+        cns (str): кадастровые номера в свободном формате
+
+    Returns:
+        geopandas.GeoDataFrame:
+    """
+    gdf = GeoDataFrame()
+    for cn in iterate_kadastrs(cns):
+        geom, attrs = _rosreestr_geom(cn, center_only=False)
+        if isinstance(attrs, dict):
+            attrs['geometry'] = geom
+            gdf = gdf.append(attrs, ignore_index=True)
+    return gdf
 
 def iterate_kadastrs(string):
     """Извлекает кадастровые номера из сырой строки
@@ -186,6 +204,12 @@ def yandex(search_string):
         else:
             logger.warning(f'(YANDEX) Not found "{search_string}"')
 
+def point_to_polygon(pt, radius):
+    gs = GeoSeries([pt], crs=4326)
+    gs = convert_to_local_csr(gs)
+    gs = gs.buffer(radius)
+    return gs.to_crs(4326).iloc[0]
+
 def amo_style_geocoding(data, cn_key, address_key):
     cn = data.get(cn_key, None)
     address = data.get(address_key, None)
@@ -208,11 +232,8 @@ def amo_style_geocoding(data, cn_key, address_key):
         try:
             pt = here(address)
             if pt is not None:
-                gs = GeoSeries([pt], crs=4326)
-                gs = convert_to_local_csr(gs)
-                gs = gs.buffer(25)
                 logger.debug(f'Success geocode address: {address}')
-                return gs.to_crs(4326).iloc[0]
+                return point_to_polygon(pt, 25)
             else:
                 logger.debug(f'Failed geocode address: {address}')
         except:
@@ -224,4 +245,4 @@ if __name__ == '__main__':
     from GIS_Tools import FastLogging
     _ = FastLogging.getLogger('rosreestr2coord')
     _ = FastLogging.getLogger(__name__)
-    poly = rosreestr_polygon('77:09:0001029:2')
+    gdf = rosreestr_geodataframe('77:02:0021016:1023; 77:02:0021016:70; 77:02:0021016:1022; 77:02:0021016:66')
