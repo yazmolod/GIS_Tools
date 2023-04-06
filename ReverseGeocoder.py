@@ -39,6 +39,11 @@ def get_cities_gdf():
         RUSSIA_CITIES = gpd.read_file(RUSSIA_REGIONS_PATH, layer='cities')
     return RUSSIA_CITIES
 
+def get_city_geometry(city_name):
+    gdf = get_cities_gdf()
+    gdf = gdf[gdf['Город'].str.strip().str.lower() == city_name.strip().lower()]
+    if len(gdf) > 0:
+        return gdf.geometry.iloc[0]
 
 def get_regions_gdf():
     """Возращает GeoDataFrame всех регионов России
@@ -51,6 +56,11 @@ def get_regions_gdf():
         RUSSIA_REGIONS = gpd.read_file(RUSSIA_REGIONS_PATH, layer='regions')
     return RUSSIA_REGIONS
 
+def get_region_geometry(region_name):
+    gdf = get_regions_gdf()
+    gdf = gdf[gdf['name'].str.strip().str.lower() == region_name.strip().lower()]
+    if len(gdf) > 0:
+        return gdf.geometry.iloc[0]
 
 def extract_city_by_address(address):
     """Функция поиска названия города в неподготовленной сырой строке
