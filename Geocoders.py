@@ -86,6 +86,28 @@ def rosreestr_polygon(kadastr):
     """
     return _rosreestr_geom(kadastr, center_only=False)
 
+def rosreestr_multipolygon(cns):
+    """Возращает полигоны и атрибуты кадастрового участка при помощи библиотеки rosreestr2coords
+
+        Args:
+            cns (str): строка с кадастровыми номерами
+
+        Returns:
+            shapely.geometry.MultiPolygon: полигоны кадастровых участков
+            list[dict]: атрибуты участков
+        """
+    polygons = []
+    all_attrs = []
+    for cn in iterate_kadastrs(cns):
+        geom, attrs = rosreestr_polygon(cn)
+        if attrs:
+            all_attrs.append(attrs)
+        if isinstance(geom, Polygon):
+            polygons.append(geom)
+        elif isinstance(geom, MultiPolygon):
+            for g in geom:
+                polygons.append(g)
+    return MultiPolygon(polygons), all_attrs
 
 def rosreestr_geodataframe(cns):
     """Возращает полигоны и атрибуты кадастрового участка при помощи библиотеки rosreestr2coords
@@ -123,7 +145,7 @@ def delete_rosreestr_cache():
     path = Path(__file__).parent.resolve() / 'rosreestr_cache'
     shutil.rmtree(str(path))
 
-def here(search_string, additional_params=None):
+def here(search_string, return_attrs=False, additional_params=None):
     """Геокодирует адрес с помощью HERE API (требуется ключ в переменных среды)
     
     Args:
@@ -153,25 +175,31 @@ def here(search_string, additional_params=None):
     url = f'https://geocode.search.hereapi.com/v1/geocode'
     if additional_params:
         params = {**params, **additional_params}
+    r = None
     try:
         r = requests.get(url, params=params)
-        if r.status_code == 429:
+        if r.status_code in (429, ):
             time.sleep(1)
-            return here(search_string, additional_params=None)
+            return here(search_string, return_attrs=return_attrs, additional_params=None)
         data = r.json()['items']
-    except:
-        logger.exception(f'(HERE) Error, status_code {r.status_code}')
+    except Exception:
+        msg = f'(HERE) Error'
+        if r:
+            msg += f', status_code {r.status_code}'
+        logger.exception(msg)
     else:
         if len(data) > 0:
             if len(data) > 1:
                 item = sorted(data, key = lambda x: x['scoring']['queryScore'], reverse=True)[0]
             else:
                 item = data[0]
-            x = item['position']['lng']
-            y = item['position']['lat']
-            pt = Point(x,y)
-            logger.info(f'(HERE) Geocoded address [{search_string}]')
-            return pt
+            if return_attrs:
+                return item
+            else:
+                x = item['position']['lng']
+                y = item['position']['lat']
+                pt = Point(x, y)
+                return pt
         else:
             logger.warning(f'(HERE) Geocoder return empty list')
 
