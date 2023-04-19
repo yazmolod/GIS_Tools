@@ -29,7 +29,10 @@ def _validate_kadastr(kadastr):
     return kad_check[0]
 
 
-KADASTR_TYPES = {k:v for k,v in TYPES.items() if k in ['Участки', 'ОКС']}
+KADASTR_TYPES = {
+    4: (TYPES['Участки'], TYPES['ОКС']),
+    3: (TYPES['Кварталы'], ),
+}
 def _rosreestr_geom(kadastr, center_only):
     """Обертка для функций библиотеки rosreestr2coord. Пытается найти геометрию и атрибуты кадастрового номера,
     перебирая все известные типы участков
@@ -44,21 +47,22 @@ def _rosreestr_geom(kadastr, center_only):
     """
     geom_type = 'Point' if center_only else 'Polygon'
     kadastr = _validate_kadastr(kadastr)
-    for kadastr_type_alias, kadastr_type in KADASTR_TYPES.items():
-        logger.debug(f'(PKK Geom) Try geocode {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
+    kadastr_len = len(kadastr.split(':'))
+    for kadastr_type in KADASTR_TYPES[kadastr_len]:
+        logger.debug(f'(PKK Geom) Try geocode {kadastr} ({geom_type}), type {kadastr_type}')
         area = Area(code=kadastr, area_type=kadastr_type, use_cache=True, center_only=center_only, media_path=str(Path(__file__).resolve().parent))
         geom_method = area.to_geojson_center if center_only else area.to_geojson_poly
         feature_string = geom_method()
         if feature_string:
             feature = json.loads(feature_string)
-            logger.info(f'(PKK Geom) Geocoded {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
+            logger.info(f'(PKK Geom) Geocoded {kadastr} ({geom_type}), type {kadastr_type}')
             if geom_type == 'Point':
                 geom = shape(feature['features'][0]['geometry'])
             else:
                 geom = shape(feature['geometry'])
             return geom, area.get_attrs()
         else:
-            logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type} ({kadastr_type_alias})')
+            logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type}')
     logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
     return None, None
 
@@ -136,7 +140,7 @@ def iterate_kadastrs(string):
         str: кадастровый номер
     """
     if isinstance(string, str):
-        for i in re.findall(r'\d+:\d+:\d+:\d+', string):
+        for i in re.findall(r'[\d:]+', string):
             yield i
 
 def delete_rosreestr_cache():
