@@ -10,6 +10,7 @@ if 'yazmo' not in VERSION:
 import time
 import requests
 from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon
+from shapely import wkt
 from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
 from geopandas import GeoSeries, GeoDataFrame
@@ -19,8 +20,22 @@ from itertools import chain
 import re
 import shutil
 import logging
+import pymongo
 logger = logging.getLogger(__name__)
+GEOCODING_CACHE_DB = pymongo.MongoClient()['GIS_Tools_Geocoders_cache']
 
+
+def cache(func):
+    def wrapper(*args, **kwargs):
+        collection = GEOCODING_CACHE_DB[func.__name__]
+        cache_result = collection.find_one({'args': args, 'kwargs': kwargs})
+        if cache_result:
+            return wkt.loads(cache_result['result'])
+        else:
+            result = func(*args, **kwargs)
+            collection.insert_one({'args': args, 'kwargs': kwargs, 'result': result.wkt})
+            return result
+    return wrapper
 
 def _validate_kadastr(kadastr):
     kad_check = re.findall(r'[\d:]+', kadastr)
@@ -149,6 +164,7 @@ def delete_rosreestr_cache():
     path = Path(__file__).parent.resolve() / 'rosreestr_cache'
     shutil.rmtree(str(path))
 
+@cache
 def here(search_string, return_attrs=False, additional_params=None):
     """Геокодирует адрес с помощью HERE API (требуется ключ в переменных среды)
     
@@ -208,6 +224,7 @@ def here(search_string, return_attrs=False, additional_params=None):
             logger.warning(f'(HERE) Geocoder return empty list')
 
 
+@cache
 def yandex(search_string):
     """Геокодирует адрес с помощью YANDEX MAP API (требуется ключ в переменных среды)
     
@@ -274,7 +291,5 @@ def amo_style_geocoding(data, cn_key, address_key):
 
 
 if __name__ == '__main__':
-    from GIS_Tools import FastLogging
-    _ = FastLogging.getLogger('rosreestr2coord')
-    _ = FastLogging.getLogger(__name__)
-    gdf = rosreestr_geodataframe('77:02:0021016:1023; 77:02:0021016:70; 77:02:0021016:1022; 77:02:0021016:66')
+    r = yandex('область Ленинградская город Волосово улица Ленинградская дом 5')
+    print(r)
