@@ -33,7 +33,7 @@ def cache(func):
             return wkt.loads(cache_result['result'])
         else:
             result = func(*args, **kwargs)
-            if isinstance(result, BaseGeometry)
+            if isinstance(result, BaseGeometry):
                 collection.insert_one({'args': args, 'kwargs': kwargs, 'result': result.wkt})
             return result
     return wrapper
