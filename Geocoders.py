@@ -9,7 +9,7 @@ if 'yazmo' not in VERSION:
 
 import time
 import requests
-from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon
+from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon, BaseGeometry
 from shapely import wkt
 from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
@@ -33,7 +33,8 @@ def cache(func):
             return wkt.loads(cache_result['result'])
         else:
             result = func(*args, **kwargs)
-            collection.insert_one({'args': args, 'kwargs': kwargs, 'result': result.wkt})
+            if isinstance(result, BaseGeometry)
+                collection.insert_one({'args': args, 'kwargs': kwargs, 'result': result.wkt})
             return result
     return wrapper
 
