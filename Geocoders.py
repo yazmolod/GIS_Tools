@@ -9,7 +9,8 @@ if 'yazmo' not in VERSION:
 
 import time
 import requests
-from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon, BaseGeometry
+from shapely.geometry import MultiPoint, Point, shape, MultiPolygon, Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely import wkt
 from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
