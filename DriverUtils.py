@@ -17,6 +17,7 @@ from datetime import datetime
 from uuid import uuid4
 import platform
 from pyvirtualdisplay import Display
+import re
 
 
 def start_selenium(
@@ -169,5 +170,38 @@ def save_responses(driver):
         with open(folder / str(uuid4()), 'wb') as file:
             file.write(r.response.body)
 
-if __name__ == '__main__':
-    driver = start_selenium(seleniumwire_driver=False)
+def __clear_element_text(x):
+    '''убирает мусор из текста элементов при парсинге (\xa0 и прочее)'''
+    if x:
+        x = x.replace('\xa0', ' ') \
+            .replace('&thinsp;', ' ') \
+            .replace('&nbsp;', ' ') \
+            .replace('&mdash;', '-') \
+            .replace('&#8470;', '№') \
+            .replace('&lt;', '<') \
+            .replace('&gt;', '> ') \
+            .strip(' \r\n\t:,.')
+        x = re.sub('<.+?>', '', x)
+        x = re.sub(r'\s{2,}', ' ', x)
+        x = x.strip()
+        return x
+
+
+def find_elements_text(dom, xpath='.', text_content=False):
+    '''Возвращает тексты элементов, найденного по xpath'''
+    elements = dom.xpath(xpath)
+    if text_content:
+        elements = [__clear_element_text(i.text_content()) for i in elements]
+    else:
+        elements = [__clear_element_text(i.text) for i in elements]
+    elements = list(filter(bool, elements))
+    return elements
+
+
+def find_element_text(dom, xpath='.', text_content=False):
+    '''Безопасно возвращает текст первого элемента, найденного по xpath'''
+    for i in dom.xpath(xpath):
+        if text_content:
+            return __clear_element_text(i.text_content())
+        else:
+            return __clear_element_text(i.text)
