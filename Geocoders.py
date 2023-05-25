@@ -65,7 +65,7 @@ def _rosreestr_geom(kadastr, center_only):
     geom_type = 'Point' if center_only else 'Polygon'
     kadastr = _validate_kadastr(kadastr)
     kadastr_len = len(kadastr.split(':'))
-    for kadastr_type in KADASTR_TYPES[kadastr_len]:
+    for kadastr_type in KADASTR_TYPES.get(kadastr_len, []):
         logger.debug(f'(PKK Geom) Try geocode {kadastr} ({geom_type}), type {kadastr_type}')
         area = Area(code=kadastr, area_type=kadastr_type, use_cache=True, center_only=center_only, media_path=str(Path(__file__).resolve().parent))
         geom_method = area.to_geojson_center if center_only else area.to_geojson_poly
