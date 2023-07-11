@@ -12,6 +12,7 @@ import time
 import requests
 import warnings
 import json
+from rosreestr2coord.utils import make_request
 
 RUSSIA_CITIES = RUSSIA_REGIONS = RUSSIA_COUNTRY = None
 RUSSIA_REGIONS_PATH = (Path(__file__).parent / "Russia_boundaries.gpkg").resolve()
@@ -169,18 +170,6 @@ def add_region_name_to_geodataframe(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
         return merged
 
 
-def make_pkk_request(method, url, **kwargs):
-    recursion = kwargs.pop('recursion', 0)
-    if recursion >= 10:
-        raise RecursionError()
-    else:
-        try:
-            r = requests.request(method, url, verify=False, timeout=5, **kwargs)
-            return r
-        except Exception as e:
-            return make_pkk_request(method, url, recursion=recursion+1, **kwargs)
-
-
 def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
     """Summary
     
@@ -201,7 +190,7 @@ def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
             'types':str(types),
             '_':round(time.time() * 1000),
         }
-        r = make_pkk_request('get', url, params=params)
+        r = make_request(url, params=params)
         if int(r.json()['total']):
             return r.json()['results']
 
@@ -284,7 +273,7 @@ def kadastr_in_boundary(geom, cn_type):
         params = {
             '_': round(time.time() * 1000),
         }
-        r = make_pkk_request('post', f'https://pkk.rosreestr.ru/api/features/{cn_type}', params=params, files=data)
+        r = make_pkk_request(f'https://pkk.rosreestr.ru/api/features/{cn_type}', method='post', params=params, files=data)
         result = r.json()
         if result['total'] == 0:
             logger.debug(f'Empty response')
