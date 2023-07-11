@@ -158,7 +158,7 @@ def iterate_kadastrs(string):
     """
     if isinstance(string, str):
         for i in re.findall(r'[\d:]+', string):
-            yield i
+            yield i.strip(':')
 
 def delete_rosreestr_cache():
     """Удаляет кэш участков с росреестра
