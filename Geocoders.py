@@ -69,10 +69,14 @@ def _rosreestr_geom(kadastr, center_only):
         logger.debug(f'(PKK Geom) Try geocode {kadastr} ({geom_type}), type {kadastr_type}')
         area = Area(code=kadastr, area_type=kadastr_type, use_cache=True, center_only=center_only, media_path=str(Path(__file__).resolve().parent))
         geom_method = area.to_geojson_center if center_only else area.to_geojson_poly
-        feature_string = geom_method()
-        if feature_string:
-            feature = json.loads(feature_string)
+        attrs = area.get_attrs()
+        if attrs:
+            feature_string = geom_method()
+            if not feature_string:
+                logger.info(f'(PKK Geom) No coordinates, only attributes {kadastr} ({geom_type}), type {kadastr_type}')
+                return None, attrs
             logger.info(f'(PKK Geom) Geocoded {kadastr} ({geom_type}), type {kadastr_type}')
+            feature = json.loads(feature_string)
             if geom_type == 'Point':
                 geom = shape(feature['features'][0]['geometry'])
             else:
