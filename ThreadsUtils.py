@@ -2,6 +2,22 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_compl
 import logging
 logger = logging.getLogger(__name__)
 
+
+def chunker(iterator, size):
+    """Разбить исходный итерируемый объект на группы списков.
+    Для случаев, когда большой список (или итератор неизвестной длины)
+    нужно запустить в pool_execute частями
+    """
+    chunk = []
+    for i in iterator:
+        chunk.append(i)
+        if len(chunk) == size:
+            yield chunk[:]
+            chunk.clear()
+    if chunk:
+        yield chunk
+
+
 def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_input=True):
     """Simple use of python threading pool
     
