@@ -239,7 +239,7 @@ def tiles_over_shape(geodata, zoom, filter_by_shape=True, fill_area_filter_facto
 		features.append(feature)
 	tiles = gpd.GeoDataFrame.from_features({'type': 'FeatureCollection', 'features': features}, crs=4326)
 	if filter_by_shape:
-		tiles = _tiles_filtering_by_series(tiles, geoseries, fill_area_filter_factor)
+		tiles = gpd.GeoDataFrame(_tiles_filtering_by_series(tiles, geoseries, fill_area_filter_factor))
 	return tiles
 
 def geopandas_drop_duplicates(geodata):
