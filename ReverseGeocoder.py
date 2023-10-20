@@ -257,37 +257,34 @@ def kadastr_in_boundary(geom, cn_type):
         geom_list.append({"type":"Polygon","coordinates":[coords]})
     sq = {"type":"GeometryCollection","geometries":geom_list}
     data = {
-      "limit":40,
-      "skip":0,
+      "limit": 40,
       "nameTab":'undefined',
       "indexTab":'undefined',
-      "inBounds":True,
-      "tolerance":4,
-      "searchInUserObjects":True,
+      "inBounds": True,
+      "tolerance": 4,
+      "searchInUserObjects": True,
       "sq": json.dumps(sq)
       }
     page = 0
     while True:
         logger.info(f'Extract cns from polygon: page {page+1}')
-        data['skip'] = page*40
+        data['skip'] = page * 40
         params = {
             '_': round(time.time() * 1000),
         }
         result = make_request_json(f'https://pkk.rosreestr.ru/api/features/{cn_type}', method='post', params=params, files=data)
-        if result['total'] == 0:
-            logger.debug(f'Empty response')
+        logger.debug(f'Returned {len(result["features"])} features')
+        for feature in result['features']:
+            yield feature['attrs']
+        if len(result["features"]) == 0 or result['total_relation'] == 'eq':
+            logger.debug(f'Last response')
             return
-        else:
-            logger.debug(f'Returned {result["total"]} features')
-            for feature in result['features']:
-                yield feature['attrs']
-            page += 1
+        page += 1
 
 
 def kadastr_poly_in_boundary(geom, cn_type):
-    """Функция аналогична kadastr_in_boundary, но также добавляет геометрию участка в ответ
+    """Функция аналогична kadastr_in_boundary, но также добавляет геометрию участка и обогащает аттрибуты
     """
     for attr in kadastr_in_boundary(geom, cn_type):
-        poly = Geocoders.rosreestr_polygon(attr['cn'])
-        attr['geometry'] = poly
-        yield attr
+        poly, new_attrs = Geocoders.rosreestr_polygon(attr['cn'])
+        yield poly, new_attrs
