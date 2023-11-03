@@ -232,7 +232,7 @@ def kadastr_in_boundary(geom, cn_type):
     """
     if isinstance(geom, Polygon):
         polygons = [geom]
-    if isinstance(geom, MultiPolygon):
+    elif isinstance(geom, MultiPolygon):
         polygons = [i for i in geom]
     elif isinstance(geom, gpd.GeoDataFrame):
         polygons = geom['geometry'].tolist()
@@ -275,8 +275,8 @@ def kadastr_in_boundary(geom, cn_type):
         result = make_request_json(f'https://pkk.rosreestr.ru/api/features/{cn_type}', method='post', params=params, files=data)
         logger.debug(f'Returned {len(result["features"])} features')
         for feature in result['features']:
-            yield feature['attrs']
-        if len(result["features"]) == 0 or result['total_relation'] == 'eq':
+            yield feature
+        if len(result["features"]) == 0:
             logger.debug(f'Last response')
             return
         page += 1
