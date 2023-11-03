@@ -6,6 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options as chrome_options
 from selenium.webdriver.firefox.options import Options as firefox_options
+from selenium.webdriver.chrome.service import Service as chrome_service
+from selenium.webdriver.firefox.service import Service as firefox_service
 from seleniumwire import webdriver as xhr_webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
@@ -19,6 +21,22 @@ import platform
 from pyvirtualdisplay import Display
 import re
 
+
+def get_driver_path(type_):
+    if type_ == 'firefox':
+        driver_path = Path(__file__).parent / '_webdrivers' / 'gecko.exe'
+        webdriver_manager = GeckoDriverManager()
+    elif type_ == 'chrome':
+        driver_path = Path(__file__).parent / '_webdrivers' / 'chrome.exe'
+        webdriver_manager = ChromeDriverManager()
+    else:
+        raise KeyError(type_)
+    driver_path = driver_path.resolve()
+    if not driver_path.exists():
+        driver_path.parent.mkdir(exist_ok=True)
+        cache_path = webdriver_manager.install()
+        shutil.copy(cache_path, str(driver_path))
+    return driver_path
 
 def start_selenium(
     driver_type='firefox', 
@@ -38,34 +56,16 @@ def start_selenium(
 
     if driver_type=='firefox':
         driver_class = driver_module.Firefox
-        driver_path = Path(__file__).parent / '_webdrivers' / 'gecko.exe'
-        webdriver_manager = GeckoDriverManager()
         options = firefox_options()
-        caps = webdriver.DesiredCapabilities.FIREFOX
+        service = firefox_service(executable_path=str(get_driver_path(driver_type)))
     elif driver_type=='chrome':
         driver_class = driver_module.Chrome
-        driver_path = Path(__file__).parent / '_webdrivers' / 'chrome.exe'
-        webdriver_manager = ChromeDriverManager()
         options = chrome_options()
-        caps = webdriver.DesiredCapabilities.CHROME
+        service = chrome_service(executable_path=str(get_driver_path(driver_type)))
     else:
         raise NotImplementedError(f"Запуск драйвера {driver_type} не реализован")
-
-    if proxy:
-        caps['proxy'] = {
-            "proxyType": "MANUAL",
-            "httpProxy": proxy,
-            "sslProxy": proxy
-        }
-
-    driver_path = driver_path.resolve()
-    if not driver_path.exists():
-        driver_path.parent.mkdir(exist_ok=True)
-        cache_path = webdriver_manager.install()
-        shutil.copy(cache_path, str(driver_path))
-
     options.headless = is_headless
-    driver = driver_class(options=options, executable_path=str(driver_path), capabilities=caps)
+    driver = driver_class(options=options, service=service)
     if not is_headless:
         driver.maximize_window()
     driver.set_page_load_timeout(timeout)
