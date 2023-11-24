@@ -56,9 +56,8 @@ def pool_execute(func, inputs=None, workers=100, pool_type='thread', unpack_inpu
         for f in as_completed(futures):
             try:    
                 result.append(f.result())
-            except Exception:
-                logger.exception(f'FATAL ERROR on args {futures[f]}')
-                return result
+            except Exception as e:
+                raise e
             else:
                 logger.info(f'Done {len(result)} out {len(futures)}')
     return result
