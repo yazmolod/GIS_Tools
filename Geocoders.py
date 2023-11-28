@@ -71,6 +71,7 @@ def _rosreestr_geom(kadastr, center_only):
         geom_method = area.to_geojson_center if center_only else area.to_geojson_poly
         attrs = area.get_attrs()
         if attrs:
+            attrs['_type'] = kadastr_type
             feature_string = geom_method()
             if not feature_string:
                 logger.info(f'(PKK Geom) No coordinates, only attributes {kadastr} ({geom_type}), type {kadastr_type}')
