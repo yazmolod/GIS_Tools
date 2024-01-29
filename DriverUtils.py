@@ -20,6 +20,7 @@ from uuid import uuid4
 import platform
 from pyvirtualdisplay import Display
 import re
+import threading
 
 
 def get_driver_path(type_):
@@ -111,8 +112,10 @@ def session_with_cookies(domain, sleep_time=0):
     return ses
 
 def transfer_cookie(fr, to, domain):
-    save_cookie(fr, 'temp.cookie')
-    set_cookie(to, domain, 'temp.cookie')
+    pid = threading.get_ident()
+    filename = f'temp_{pid}.cookie'
+    save_cookie(fr, filename)
+    set_cookie(to, domain, filename)
 
 def save_cookie(cookie_container, cookie_path):
     '''Cохраняются куки сессии selenium driver'''
@@ -146,18 +149,18 @@ def scroll_page(driver, infinite_scroll=True, xpaths=[], sleep_time=1):
     time.sleep(sleep_time)
     new_height = driver.execute_script("return document.body.scrollHeight")
     if not infinite_scroll:
-    	return last_height==new_height
+        return last_height==new_height
     else:
-	    stop_elements = []
-	    for xpath in xpaths:
-	        elements = driver.find_elements_by_xpath(xpath)
-	        stop_elements += elements
-	    if len(stop_elements) != 0:
-	    	return True
-	    elif last_height==new_height:
-	    	return True
-	    else:
-		    return scroll_page(driver, infinite_scroll, xpaths, sleep_time)
+        stop_elements = []
+        for xpath in xpaths:
+            elements = driver.find_elements_by_xpath(xpath)
+            stop_elements += elements
+        if len(stop_elements) != 0:
+            return True
+        elif last_height==new_height:
+            return True
+        else:
+            return scroll_page(driver, infinite_scroll, xpaths, sleep_time)
 
 def save_html(response, path='./debug.html'):
     with open(path, 'wb') as file:

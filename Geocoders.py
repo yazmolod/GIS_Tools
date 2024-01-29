@@ -85,7 +85,7 @@ def _rosreestr_geom(kadastr, center_only):
             return geom, area.get_attrs()
         else:
             logger.debug(f'(PKK Geom) Nothing found for {kadastr} ({geom_type}), type {kadastr_type}')
-    logger.warning(f'(PKK Geom) {geom_type} not found ({kadastr})')
+    logger.info(f'(PKK Geom) {geom_type} not found ({kadastr})')
     return None, None
 
 def rosreestr_point(kadastr):
