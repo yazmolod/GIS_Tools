@@ -171,7 +171,7 @@ def delete_rosreestr_cache():
     shutil.rmtree(str(path))
 
 @cache
-def here(search_string, return_attrs=False, additional_params=None):
+def here(search_string, return_attrs=False, additional_params=None, **kwargs):
     """Геокодирует адрес с помощью HERE API (требуется ключ в переменных среды)
     
     Args:
@@ -181,6 +181,8 @@ def here(search_string, return_attrs=False, additional_params=None):
     Returns:
         shapely.geometry.Point: ответ сервера - точка в epsg4326
     """
+    try_ = kwargs.get('restart', 0)
+    TRIES = 5
     # избавляемся от переносов строки, табуляции и прочего
     search_string = re.sub(r'\s+', ' ', search_string)
     # убираем повторяющиеся лексемы из запроса
@@ -204,30 +206,33 @@ def here(search_string, return_attrs=False, additional_params=None):
     r = None
     try:
         r = requests.get(url, params=params)
-        if r.status_code in (429, ):
-            time.sleep(1)
-            return here(search_string, return_attrs=return_attrs, additional_params=None)
-        data = r.json()['items']
     except Exception:
         msg = f'(HERE) Error'
         if r:
             msg += f', status_code {r.status_code}'
         logger.exception(msg)
-    else:
-        if len(data) > 0:
-            if len(data) > 1:
-                item = sorted(data, key = lambda x: x['scoring']['queryScore'], reverse=True)[0]
-            else:
-                item = data[0]
-            if return_attrs:
-                return item
-            else:
-                x = item['position']['lng']
-                y = item['position']['lat']
-                pt = Point(x, y)
-                return pt
+        return
+    if r.status_code in (429, ):
+        if try_ > TRIES:
+            raise RecursionError
+        logger.info(f'Too many requests, sleep 10... [{try_}/{TRIES}], {r.text}')
+        time.sleep(3)
+        return here(search_string, return_attrs=return_attrs, additional_params=None, restart=try_+1)
+    data = r.json()['items']
+    if len(data) > 0:
+        if len(data) > 1:
+            item = sorted(data, key = lambda x: x['scoring']['queryScore'], reverse=True)[0]
         else:
-            logger.warning(f'(HERE) Geocoder return empty list')
+            item = data[0]
+        if return_attrs:
+            return item
+        else:
+            x = item['position']['lng']
+            y = item['position']['lat']
+            pt = Point(x, y)
+            return pt
+    else:
+        logger.warning(f'(HERE) Geocoder return empty list')
 
 
 @cache
