@@ -1,5 +1,6 @@
+import GIS_Tools.config
+import os
 import shapely.errors
-from GIS_Tools.config import HERE_API_KEY
 from GIS_Tools import ProxyGrabber
 from GIS_Tools import Geocoders
 import geopandas as gpd
@@ -206,7 +207,7 @@ def here_address_by_point(pt):
     """
     params = {
         'at':f'{pt.y},{pt.x}',
-        'apiKey':HERE_API_KEY,
+        'apiKey': os.environ['HERE_API_KEY'],
         'lang':'ru-RU'
     }
     url = f'https://revgeocode.search.hereapi.com/v1/revgeocode'

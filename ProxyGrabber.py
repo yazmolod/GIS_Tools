@@ -1,6 +1,7 @@
+import GIS_Tools.config
 from fake_headers import Headers
-from GIS_Tools.config import HIDEMY_NAME_API_CODE
 import cloudscraper
+import os
 from lxml import html
 import re
 import json
@@ -80,7 +81,7 @@ class ProxyGrabber:
         'out': 'js',
         'maxtime': self.default_speed,
         'type': self.default_types,
-        'code': HIDEMY_NAME_API_CODE
+        'code': os.environ['HIDEMY_NAME_API_CODE']
         }
 
         r = requests.get(url, params=params)

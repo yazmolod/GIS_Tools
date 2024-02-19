@@ -1,6 +1,5 @@
-from GIS_Tools import ProxyGrabber
-from GIS_Tools.config import HERE_API_KEY, YANDEX_API_KEY
-
+import GIS_Tools.config
+import os
 import warnings
 from rosreestr2coord import Area, VERSION
 from rosreestr2coord.parser import TYPES
@@ -196,7 +195,7 @@ def here(search_string, return_attrs=False, additional_params=None):
     # генерируем запрос
     params = {
     'q': search_string,
-    'apiKey': HERE_API_KEY,
+    'apiKey': os.environ['HERE_API_KEY'],
     'lang': 'ru-RU'
     }
     url = f'https://geocode.search.hereapi.com/v1/geocode'
@@ -243,7 +242,7 @@ def yandex(search_string):
     """
     endpoint = 'https://geocode-maps.yandex.ru/1.x'
     params = {
-        'apikey': YANDEX_API_KEY,
+        'apikey': os.environ['YANDEX_API_KEY'],
         'geocode': search_string,
         'format': 'json'
     }
