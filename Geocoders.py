@@ -171,7 +171,7 @@ def delete_rosreestr_cache():
     shutil.rmtree(str(path))
 
 @cache
-def here(search_string, return_attrs=False, additional_params=None, **kwargs):
+def here(search_string, return_attrs=False, additional_params=None, restart=0):
     """Геокодирует адрес с помощью HERE API (требуется ключ в переменных среды)
     
     Args:
@@ -181,7 +181,6 @@ def here(search_string, return_attrs=False, additional_params=None, **kwargs):
     Returns:
         shapely.geometry.Point: ответ сервера - точка в epsg4326
     """
-    try_ = kwargs.get('restart', 0)
     TRIES = 5
     # избавляемся от переносов строки, табуляции и прочего
     search_string = re.sub(r'\s+', ' ', search_string)
@@ -213,11 +212,11 @@ def here(search_string, return_attrs=False, additional_params=None, **kwargs):
         logger.exception(msg)
         return
     if r.status_code in (429, ):
-        if try_ > TRIES:
+        if restart > TRIES:
             raise RecursionError
-        logger.info(f'Too many requests, sleep 10... [{try_}/{TRIES}], {r.text}')
+        logger.info(f'Too many requests, sleep 10... [{restart}/{TRIES}], {r.text}')
         time.sleep(3)
-        return here(search_string, return_attrs=return_attrs, additional_params=None, restart=try_+1)
+        return here(search_string, return_attrs=return_attrs, additional_params=None, restart=restart+1)
     data = r.json()['items']
     if len(data) > 0:
         if len(data) > 1:
