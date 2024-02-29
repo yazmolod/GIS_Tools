@@ -48,6 +48,7 @@ def _validate_kadastr(kadastr):
 KADASTR_TYPES = {
     4: (TYPES['Участки'], TYPES['ОКС']),
     3: (TYPES['Кварталы'], ),
+    2: (TYPES['Районы'], ),
 }
 def _rosreestr_geom(kadastr, center_only):
     """Обертка для функций библиотеки rosreestr2coord. Пытается найти геометрию и атрибуты кадастрового номера,
