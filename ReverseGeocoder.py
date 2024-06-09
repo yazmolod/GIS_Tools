@@ -1,7 +1,4 @@
-import GIS_Tools.config
 import os
-import shapely.errors
-from GIS_Tools import ProxyGrabber
 from GIS_Tools import Geocoders
 import geopandas as gpd
 from pathlib import Path
@@ -11,7 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 import time
 import requests
-import warnings
 import json
 from rosreestr2coord.utils import make_request_json
 

@@ -1,4 +1,3 @@
-import GIS_Tools.config
 import os
 import warnings
 from rosreestr2coord import Area, VERSION
@@ -15,7 +14,6 @@ from GIS_Tools.GeoUtils import convert_to_local_csr
 from pathlib import Path
 from geopandas import GeoSeries, GeoDataFrame
 import json
-from pyproj import Transformer
 from itertools import chain
 import re
 import shutil
@@ -131,7 +129,7 @@ def rosreestr_multipolygon(cns):
         if isinstance(geom, Polygon):
             polygons.append(geom)
         elif isinstance(geom, MultiPolygon):
-            for g in geom:
+            for g in geom.geoms:
                 polygons.append(g)
     return MultiPolygon(polygons), all_attrs
 
@@ -247,7 +245,7 @@ def yandex(search_string):
     """
     endpoint = 'https://geocode-maps.yandex.ru/1.x'
     params = {
-        'apikey': os.environ['YANDEX_API_KEY'],
+        'apikey': os.environ['YANDEX_GEOCODING_API_KEY'],
         'geocode': search_string,
         'format': 'json'
     }
