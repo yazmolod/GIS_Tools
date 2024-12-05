@@ -132,3 +132,4 @@ __selenium_responses/
 rosreestr_cache/
 tmp/
 .idea/
+.ruff_cache/

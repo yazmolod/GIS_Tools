@@ -1,0 +1,42 @@
+[project]
+name = "gis-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Aleksandr Litovchenko", email = "yazmolod@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pypkk",
+    "requests>=2.32.3",
+    "geopandas>=1.0.1",
+    "shapely>=2.0.6",
+    "pymongo>=4.10.1",
+]
+
+[project.optional-dependencies]
+driver = [
+    "selenium-wire==2.1.2",
+    "selenium==3.141.0",
+    "webdriver-manager==2.5.3",
+]
+geo = [
+    "mercantile>=1.2.1",
+    "pyproj>=3.7.0",
+]
+nlp = [
+    "natasha==1.6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+pypkk = { git = "https://github.com/yazmolod/pypkk" }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+]

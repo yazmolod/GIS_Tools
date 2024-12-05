@@ -1,11 +1,10 @@
 from natasha import (
-    Segmenter,
+    AddrExtractor,
+    Doc,
     MorphVocab,
-
     NewsEmbedding,
     NewsMorphTagger,
-    Doc,
-    AddrExtractor,
+    Segmenter,
 )
 
 __segmentor = Segmenter()
@@ -13,6 +12,7 @@ __embedding = NewsEmbedding()
 __tagger = NewsMorphTagger(__embedding)
 __morpher = MorphVocab()
 __address_extractor = AddrExtractor(__morpher)
+
 
 def tokenize_text(text):
     text = text.strip()
@@ -23,9 +23,10 @@ def tokenize_text(text):
         token.lemmatize(__morpher)
     return doc
 
+
 def iter_address_parts(text):
     matches = __address_extractor.find(text)
-    invalid_types = ['площадь']
+    invalid_types = ["площадь"]
     if matches:
         for i in matches.fact.parts:
             t = i.type
