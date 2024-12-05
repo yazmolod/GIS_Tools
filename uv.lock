@@ -265,6 +265,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hishel"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/b9/d7328c8507e45e27784e9c1f440c2b900ae1e60a980480d869b6c0b2553c/hishel-0.1.1.tar.gz", hash = "sha256:1f6421b78cc23fc43c610f651b7848c9b8eee2d29551d64a2ab0d45b319b6559", size = 35615 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/e9/93174034316943513a372e1b92d9ee2394973a63d2a99d6ca6432511eca3/hishel-0.1.1-py3-none-any.whl", hash = "sha256:5b51acc340303faeef2f5cfc1658acb1db1fdc3e3ad76406265a485f9707c5d6", size = 41852 },
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -771,10 +783,10 @@ wheels = [
 
 [[package]]
 name = "pypkk"
-version = "0.0.1"
-source = { git = "https://github.com/yazmolod/pypkk#1e68b7c2e3a318f4364bb9b687a8e490dbabc8e1" }
+version = "0.0.2"
+source = { git = "https://github.com/yazmolod/pypkk#4f5ce567ab19230ab12dce6531336bbfded5c171" }
 dependencies = [
-    { name = "httpx" },
+    { name = "hishel" },
     { name = "numpy" },
     { name = "opencv-python" },
     { name = "pydantic" },

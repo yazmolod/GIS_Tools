@@ -7,13 +7,7 @@ authors = [
     { name = "Aleksandr Litovchenko", email = "yazmolod@gmail.com" }
 ]
 requires-python = ">=3.10"
-dependencies = [
-    "pypkk",
-    "requests>=2.32.3",
-    "geopandas>=1.0.1",
-    "shapely>=2.0.6",
-    "pymongo>=4.10.1",
-]
+dependencies = []
 
 [project.optional-dependencies]
 driver = [
@@ -21,7 +15,14 @@ driver = [
     "selenium==3.141.0",
     "webdriver-manager==2.5.3",
 ]
-geo = [
+geocoding = [
+    "pypkk",
+    "requests>=2.32.3",
+    "geopandas>=1.0.1",
+    "shapely>=2.0.6",
+    "pymongo>=4.10.1",
+]
+geoutils = [
     "mercantile>=1.2.1",
     "pyproj>=3.7.0",
 ]

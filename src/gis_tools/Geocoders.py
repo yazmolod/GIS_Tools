@@ -14,7 +14,7 @@ from shapely import wkt
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
-from .GeoUtils import convert_to_local_csr
+from .geo_utils import convert_to_local_csr
 
 logger = logging.getLogger(__name__)
 GEOCODING_CACHE_DB = pymongo.MongoClient()["GIS_Tools_Geocoders_cache"]

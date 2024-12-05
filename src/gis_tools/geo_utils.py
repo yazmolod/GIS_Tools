@@ -12,7 +12,7 @@ import pyproj
 from shapely import wkb
 from shapely.geometry import box
 
-from .ThreadsUtils import pool_execute
+from .thread_utils import pool_execute
 
 logger = logging.getLogger(__name__)
 
