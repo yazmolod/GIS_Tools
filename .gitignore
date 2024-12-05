@@ -133,3 +133,4 @@ rosreestr_cache/
 tmp/
 .idea/
 .ruff_cache/
+.hishel.sqlite

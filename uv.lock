@@ -37,6 +37,18 @@ wheels = [
 ]
 
 [[package]]
+name = "anysqlite"
+version = "0.0.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/4b/cd5d66b9f87e773bc71344a368b9472987e33514e6627e28342b9c3e7c43/anysqlite-0.0.5.tar.gz", hash = "sha256:9dfcf87baf6b93426ad1d9118088c41dbf24ef01b445eea4a5d486bac2755cce", size = 3432 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/31/349eae2bc9d9331dd8951684cf94528d91efaa71129dc30822ac111dfc66/anysqlite-0.0.5-py3-none-any.whl", hash = "sha256:cb345dc4f76f6b37f768d7a0b3e9cf5c700dfcb7a6356af8ab46a11f666edbe7", size = 3907 },
+]
+
+[[package]]
 name = "certifi"
 version = "2024.8.30"
 source = { registry = "https://pypi.org/simple" }
@@ -210,13 +222,6 @@ wheels = [
 name = "gis-tools"
 version = "0.1.0"
 source = { editable = "." }
-dependencies = [
-    { name = "geopandas" },
-    { name = "pymongo" },
-    { name = "pypkk" },
-    { name = "requests" },
-    { name = "shapely" },
-]
 
 [package.optional-dependencies]
 driver = [
@@ -224,7 +229,14 @@ driver = [
     { name = "selenium-wire" },
     { name = "webdriver-manager" },
 ]
-geo = [
+geocoding = [
+    { name = "geopandas" },
+    { name = "pymongo" },
+    { name = "pypkk" },
+    { name = "requests" },
+    { name = "shapely" },
+]
+geoutils = [
     { name = "mercantile" },
     { name = "pyproj" },
 ]
@@ -239,16 +251,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "geopandas", specifier = ">=1.0.1" },
-    { name = "mercantile", marker = "extra == 'geo'", specifier = ">=1.2.1" },
+    { name = "geopandas", marker = "extra == 'geocoding'", specifier = ">=1.0.1" },
+    { name = "mercantile", marker = "extra == 'geoutils'", specifier = ">=1.2.1" },
     { name = "natasha", marker = "extra == 'nlp'", specifier = "==1.6.0" },
-    { name = "pymongo", specifier = ">=4.10.1" },
-    { name = "pypkk", git = "https://github.com/yazmolod/pypkk" },
-    { name = "pyproj", marker = "extra == 'geo'", specifier = ">=3.7.0" },
-    { name = "requests", specifier = ">=2.32.3" },
+    { name = "pymongo", marker = "extra == 'geocoding'", specifier = ">=4.10.1" },
+    { name = "pypkk", marker = "extra == 'geocoding'", git = "https://github.com/yazmolod/pypkk" },
+    { name = "pyproj", marker = "extra == 'geoutils'", specifier = ">=3.7.0" },
+    { name = "requests", marker = "extra == 'geocoding'", specifier = ">=2.32.3" },
     { name = "selenium", marker = "extra == 'driver'", specifier = "==3.141.0" },
     { name = "selenium-wire", marker = "extra == 'driver'", specifier = "==2.1.2" },
-    { name = "shapely", specifier = ">=2.0.6" },
+    { name = "shapely", marker = "extra == 'geocoding'", specifier = ">=2.0.6" },
     { name = "webdriver-manager", marker = "extra == 'driver'", specifier = "==2.5.3" },
 ]
 
@@ -274,6 +286,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/10/b9/d7328c8507e45e27784e9c1f440c2b900ae1e60a980480d869b6c0b2553c/hishel-0.1.1.tar.gz", hash = "sha256:1f6421b78cc23fc43c610f651b7848c9b8eee2d29551d64a2ab0d45b319b6559", size = 35615 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/e9/93174034316943513a372e1b92d9ee2394973a63d2a99d6ca6432511eca3/hishel-0.1.1-py3-none-any.whl", hash = "sha256:5b51acc340303faeef2f5cfc1658acb1db1fdc3e3ad76406265a485f9707c5d6", size = 41852 },
+]
+
+[package.optional-dependencies]
+sqlite = [
+    { name = "anysqlite" },
 ]
 
 [[package]]
@@ -784,9 +801,9 @@ wheels = [
 [[package]]
 name = "pypkk"
 version = "0.0.2"
-source = { git = "https://github.com/yazmolod/pypkk#4f5ce567ab19230ab12dce6531336bbfded5c171" }
+source = { git = "https://github.com/yazmolod/pypkk#cfb9169d5df3994a5221b81824b3d53975db23b8" }
 dependencies = [
-    { name = "hishel" },
+    { name = "hishel", extra = ["sqlite"] },
     { name = "numpy" },
     { name = "opencv-python" },
     { name = "pydantic" },
