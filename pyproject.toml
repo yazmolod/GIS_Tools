@@ -28,6 +28,7 @@ geoutils = [
 ]
 nlp = [
     "natasha==1.6.0",
+    "setuptools>=75.6.0",
 ]
 
 [build-system]
