@@ -6,13 +6,12 @@ from math import floor
 from pathlib import Path
 
 import geopandas as gpd
-import mercantile
 import numpy as np
 import pyproj
 from shapely import wkb
 from shapely.geometry import box
 
-from .thread_utils import pool_execute
+from .threads_utils import pool_execute
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +241,7 @@ def tiles_over_shape(geodata, zoom, filter_by_shape=True, fill_area_filter_facto
     Returns:
         geopandas.GeoDataFrame: тайлы и их x,y,z
     """
+    import mercantile
     geoseries = _geo_input_handler(geodata, 4326)
     x1, y1 = geoseries.bounds.min()[["minx", "miny"]]
     x2, y2 = geoseries.bounds.max()[["maxx", "maxy"]]
