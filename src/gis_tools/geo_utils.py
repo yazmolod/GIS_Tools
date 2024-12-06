@@ -143,7 +143,8 @@ def _tiles_filtering_by_series(tiles, extent_geoseries, fill_area_filter_factor)
     filtered_tiles = tiles.iloc[0:0]  # копируем тип, но не копируем данные
     for i, geom in enumerate(extent_geoseries):
         ft = _tiles_filtering_by_geometry(tiles, geom, fill_area_filter_factor)
-        filtered_tiles = gpd.GeoSeries(gpd.pd.concat([filtered_tiles, ft]))
+        con = gpd.pd.concat([filtered_tiles, ft])
+        filtered_tiles = gpd.GeoDataFrame(con)
     return geopandas_drop_duplicates(filtered_tiles)
 
 
