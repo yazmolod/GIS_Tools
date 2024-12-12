@@ -11,9 +11,9 @@ dependencies = []
 
 [project.optional-dependencies]
 driver = [
-    "selenium-wire==2.1.2",
-    "selenium==3.141.0",
-    "webdriver-manager==2.5.3",
+    "selenium-wire==5.1.0",
+    "selenium==4.11.2",
+    "webdriver-manager==4.0.2",
 ]
 geocoding = [
     "pypkk",
