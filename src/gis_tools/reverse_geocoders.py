@@ -6,7 +6,6 @@ from pathlib import Path
 
 import geopandas as gpd
 import requests
-from pypkk import PKK
 from shapely.geometry import MultiPoint, Point
 
 logger = logging.getLogger(__name__)
@@ -156,29 +155,6 @@ def extract_region_by_point(pt):
             return reg.iloc[0]
     else:
         raise TypeError(f"Unknown type {type(pt)}")
-
-
-def kadastr_by_point(pt, types, min_tolerance=0, max_tolerance=3):
-    """Summary
-
-    Args:
-        pt (TYPE): Description
-        types (TYPE): Description
-        min_tolerance (int, optional): Description
-        max_tolerance (int, optional): Description
-
-    Returns:
-        TYPE: Description
-    """
-    warnings.warn(
-        "Deprecated: use pypkk.search_at_point",
-        category=DeprecationWarning,
-        stacklevel=2,
-    )
-    with PKK() as pkk:
-        resp = pkk.search_at_point(pt.x, pt.y, types)
-        if resp.total:
-            return resp.results
 
 
 def here_address_by_point(pt):

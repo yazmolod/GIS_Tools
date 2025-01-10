@@ -16,7 +16,6 @@ driver = [
     "webdriver-manager==4.0.2",
 ]
 geocoding = [
-    "pypkk",
     "requests>=2.32.3",
     "geopandas>=1.0.1",
     "shapely>=2.0.6",
@@ -34,9 +33,6 @@ nlp = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv.sources]
-pypkk = { git = "https://github.com/yazmolod/pypkk" }
 
 [dependency-groups]
 dev = [
